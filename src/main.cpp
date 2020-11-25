@@ -9,6 +9,9 @@
 
 #define DEBUG_INFO 1
 
+#define BULLET_SPEED        120.0f
+#define MAX_SPEED_SPACESHIP 50.0f
+
 class SpaceObject
 {
 public:
@@ -81,8 +84,6 @@ public:
         }
         else if( eObjectType::BULLET == type )
         {
-            m_vPoints.push_back( position );
-
             m_type  = eObjectType::BULLET;
             m_color = olc::DARK_GREY;
         }
@@ -90,6 +91,12 @@ public:
 
     void draw( olc::PixelGameEngine& pge ) const
     {
+        if( eObjectType::BULLET == m_type )
+        {
+            pge.FillCircle( m_pos, 1, m_color );
+
+            return;
+        }
         // we do not want to change the points of the model. that's why we create pointsTransformed
         std::vector< olc::vf2d > pointsTransformed;
         const size_t nPoints = m_vPoints.size();
@@ -99,13 +106,6 @@ public:
             return;
         }
         
-        if( eObjectType::BULLET == m_type )
-        {
-            pge.FillCircle( m_pos, 1, m_color );
-
-            return;
-        }
-
         pointsTransformed.resize( nPoints );
 
         // rotate first
@@ -131,8 +131,19 @@ public:
 
             pge.DrawLine( pointsTransformed[ i % nPoints ], pointsTransformed[ j % nPoints ], m_color );
         }
+
+        // draw acceleration effect
+        if( eObjectType::SPACESHIP == m_type && true == m_bAccelerate )
+        {
+            olc::vf2d dir;
+            dir.x = sinf( m_angle );
+            dir.y = -cosf( m_angle );
+            dir *= -0.5f * m_size;
+            pge.FillCircle( m_pos + dir, 2, olc::YELLOW );
+        }
 #if DEBUG_INFO
         pge.DrawStringDecal( m_pos, "angle: " + std::to_string( m_angle ), olc::WHITE, { 0.5, 0.5 } );
+        pge.DrawStringDecal( m_pos + olc::vd2d( 0.0f, 8.0f ), "speed: " + std::to_string( m_velocity.mag() ), olc::WHITE, { 0.5, 0.5 } );
 #endif
     }
 
@@ -156,6 +167,20 @@ public:
                 // ACCELERATION changes VELOCITY (with respect to time)
                 m_velocity.x += sin( m_angle ) * 40.0f * timeElapsed;
                 m_velocity.y += -cos( m_angle ) * 40.0f * timeElapsed;
+                                
+                m_bAccelerate = true;
+
+                // limit speed
+                if( m_velocity.mag() > MAX_SPEED_SPACESHIP )
+                {
+                    m_velocity *= ( MAX_SPEED_SPACESHIP / m_velocity.mag() );
+                    m_bAccelerate = false;
+                }
+            }
+
+            if( pge.GetKey( olc::Key::UP ).bReleased )
+            {
+                m_bAccelerate = false;
             }
         }
         else
@@ -224,8 +249,9 @@ private:
     /* appearance */
     int m_size              = 20; // in pixels (asteroids -> radius)
     olc::Pixel m_color      = olc::GREEN;
+    bool m_bAccelerate      = false;    // for drawing effect only
 
-    std::vector< olc::vf2d > m_vPoints;    
+    std::vector< olc::vf2d > m_vPoints;
 };
 
 // Override base class with your custom functionality
@@ -312,7 +338,7 @@ public:
         // place the ball at the front of the spaceship (that's why we shift the position a bit)
         bullet.init( m_player.getPos() + vel * (float)m_player.getSize() * 0.7f, 2, SpaceObject::BULLET );
 
-        vel *= 80;
+        vel *= BULLET_SPEED;
         bullet.setVelocity( vel );
 
         m_vBullets.push_back( bullet );
