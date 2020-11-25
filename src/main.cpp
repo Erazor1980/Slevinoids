@@ -7,81 +7,178 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
+#define DEBUG_INFO 0
+
 class SpaceObject
 {
 public:
     SpaceObject()
     {
-        /* player as triangle */
-        m_points[ 0 ] = { 0, -m_size * 2 / 3.0f };              // top
-        m_points[ 1 ] = { -m_size / 4.0f, m_size * 1 / 3.0f };  // bottom left
-        m_points[ 2 ] = { m_size / 4.0f, m_size * 1 / 3.0f };   // bottom right
+    }
+
+    olc::vf2d getPos() const
+    {
+        return m_pos;
+    }
+
+    void init( const olc::vf2d position, const int size, const bool bIsPlayer )
+    {
+        m_vPoints.clear();
+        m_pos   = position;
+        m_size  = size;
+        
+        if( bIsPlayer )
+        {
+            /* player as triangle */
+            m_vPoints = {
+                { 0, -m_size * 2 / 3.0f },              // top
+                { -m_size / 4.0f, m_size * 1 / 3.0f },  // bottom left
+                { m_size / 4.0f, m_size * 1 / 3.0f },   // bottom right
+            };
+
+            m_bIsPlayer = true;
+        }
+        else   // asteroid
+        {
+            // Create a "jagged" circle for the asteroid. It's important it remains
+            // mostly circular, as we do a simple collision check against a perfect
+            // circle.
+            int verts = 20;
+
+            for( int i = 0; i < verts; i++ )
+            {
+                float noise = ( float )rand() / ( float )RAND_MAX * 0.4f + 0.8f;
+                
+                olc::vf2d ver;
+                ver.x = noise * sinf( ( ( float )i / ( float )verts ) * 6.28318f ) * m_size;
+                ver.y = noise * cosf( ( ( float )i / ( float )verts ) * 6.28318f ) * m_size;
+                m_vPoints.push_back( ver );
+            }
+
+            m_angleDelta    = ( float )rand() / ( float )RAND_MAX * 0.00004f + 0.00008f;
+            if( rand() % 2 == 1 )
+            {
+                m_angleDelta *= -1;
+            }
+            m_bIsPlayer     = false;
+        }
     }
 
     void draw( olc::PixelGameEngine& pge )
     {
-        // rotate first
-        olc::vf2d pointsRotated[ 3 ] = { m_points[ 0 ], m_points[ 1 ], m_points[ 2 ] };
-        for( int i = 0; i < 3; ++i )
-        {
-            const float x = pointsRotated[ i ].x;
-            const float y = pointsRotated[ i ].y;
+        // we do not want to change the points of the model. that's why we create pointsTransformed
+        std::vector< olc::vf2d > pointsTransformed;
+        const size_t nPoints = m_vPoints.size();
 
-            pointsRotated[ i ].x = x * cosf( m_angle ) - y * sinf( m_angle );
-            pointsRotated[ i ].y = y * cosf( m_angle ) + x * sinf( m_angle );
+        if( nPoints == 0 )
+        {
+            return;
+        }
+
+        pointsTransformed.resize( nPoints );
+
+        // rotate first
+        for( int i = 0; i < nPoints; ++i )
+        {
+            const float x = m_vPoints[ i ].x;
+            const float y = m_vPoints[ i ].y;
+
+            pointsTransformed[ i ].x = x * cosf( m_angle ) - y * sinf( m_angle );
+            pointsTransformed[ i ].y = y * cosf( m_angle ) + x * sinf( m_angle );
         }
 
         // translate
-        for( int i = 0; i < 3; ++i )
+        for( int i = 0; i < nPoints; ++i )
         {
-            pointsRotated[ i ] += m_pos;
+            pointsTransformed[ i ] += m_pos;
+        }
+        
+        // draw closed polygon
+        for( int i = 0; i < nPoints + 1; i++ )
+        {
+            int j = ( i + 1 );
+
+            pge.DrawLine( pointsTransformed[ i % nPoints ], pointsTransformed[ j % nPoints ], m_color );
         }
 
-        pge.DrawTriangle( pointsRotated[ 0 ], pointsRotated[ 1 ], pointsRotated[ 2 ], m_color );
-
-        
+#if DEBUG_INFO
+        pge.DrawStringDecal( m_pos, "angle: " + std::to_string( m_angle ), olc::WHITE, { 0.5, 0.5 } );
+#endif
     }
 
     void update( const olc::PixelGameEngine& pge, const float timeElapsed )
     {
-        if( pge.GetKey( olc::Key::LEFT ).bHeld )
+        // orientation
+        if( true == m_bIsPlayer )
         {
-            m_angle += -timeElapsed * 3;
+            if( pge.GetKey( olc::Key::LEFT ).bHeld )
+            {
+                m_angle += -timeElapsed * 3;
+            }
+            if( pge.GetKey( olc::Key::RIGHT ).bHeld )
+            {
+                m_angle += timeElapsed * 3;
+            }
+
+            // Thrust? Apply ACCELERATION
+            if( pge.GetKey( olc::Key::UP ).bHeld )
+            {
+                // ACCELERATION changes VELOCITY (with respect to time)
+                m_velocity.x += sin( m_angle ) * 40.0f * timeElapsed;
+                m_velocity.y += -cos( m_angle ) * 40.0f * timeElapsed;
+            }
         }
-        if( pge.GetKey( olc::Key::RIGHT ).bHeld )
+        else
         {
-            m_angle += timeElapsed * 3;
+            m_angle += m_angleDelta;
         }
 
-
-        // Thrust? Apply ACCELERATION
-        if( pge.GetKey( olc::Key::UP ).bHeld )
+        if( m_angle > 6.28318f )
         {
-            // ACCELERATION changes VELOCITY (with respect to time)
-            m_velocity.x += sin( m_angle ) * 40.0f * timeElapsed;
-            m_velocity.y += -cos( m_angle ) * 40.0f * timeElapsed;
+            m_angle = 0;
+        }
+        if( m_angle < 0 )
+        {
+            m_angle = 6.28318f;
         }
 
         // VELOCITY changes POSITION (with respect to time)
         m_pos += m_velocity * timeElapsed;
-        //player.x += player.dx * timeElapsed;
-        //player.y += player.dy * timeElapsed;
+
+
+        // stay within the game space
+        if( m_pos.x < -m_size )
+        {
+            m_pos.x = ( float )pge.ScreenWidth();
+        }
+        if( m_pos.x >( float )pge.ScreenWidth() + m_size )
+        {
+            m_pos.x = 0;
+        }
+        if( m_pos.y < -m_size )
+        {
+            m_pos.y = ( float )pge.ScreenHeight();
+        }
+        if( m_pos.y >( float )pge.ScreenHeight() + m_size )
+        {
+            m_pos.y = 0;
+        }
     }
 private:
     /* attributes */
-    float m_angle = 0.0f;
+    float m_angle           = 0.0f;
+    float m_angleDelta      = 0.0f;  // for asteroids only, constant rotation speed
+    bool m_bIsPlayer        = true;  // otherwise it is an asteroid
 
-    olc::vf2d m_pos = { 100, 100 };
+    olc::vf2d m_pos         = { 100, 100 };
 
     olc::vf2d m_velocity    = { 0, 0 };
 
     /* appearance */
-    int m_size = 20; // in pixels
-    olc::Pixel m_color = olc::GREEN;
+    int m_size              = 20; // in pixels
+    olc::Pixel m_color      = olc::GREEN;
 
-    //std::vector< olc::vf2d m_points[ 3 ];
-    olc::vf2d m_points[ 3 ];
-
+    std::vector< olc::vf2d > m_vPoints;    
 };
 
 // Override base class with your custom functionality
@@ -94,74 +191,72 @@ public:
         sAppName = "Luki's Test";
     }
 
-    olc::Sprite* mp_img = nullptr;
-    olc::Decal* mp_decal = nullptr;
-
-    int m_nLayers;
     SpaceObject m_player;
+    std::vector< SpaceObject > m_vAsteroids;
+
+    int m_score = 0;
 public:
+    void resetGame()
+    {
+        m_score = 0;
+        m_player.init( { ScreenWidth() / 2.0f, ScreenHeight() / 2.0f }, 20, true );
+
+        m_vAsteroids.clear();
+        
+        createAsteroids( 2, m_player.getPos() );
+    }
+    void createAsteroids( const int number, olc::vf2d playerPos )
+    {
+        /* initialize random seed */
+        srand( unsigned int( time( NULL ) ) );
+
+        float distanceToShip = 100;
+
+        for( int i = 0; i < number; ++i )
+        {
+            SpaceObject obj;
+
+            // get random angle (around the player) to position the asteroid
+            float rndAngle = ( float )rand() / ( float )RAND_MAX * 6.28318f;
+            distanceToShip += ( float )rand() / ( float )RAND_MAX * 10;
+            olc::vf2d pos;
+            pos.x += sin( rndAngle ) * distanceToShip;
+            pos.y += -cos( rndAngle ) * distanceToShip;
+
+            pos += playerPos;
+
+            obj.init( pos, 30, false );
+
+            m_vAsteroids.push_back( obj );
+        }
+    }
+
     bool OnUserCreate() override
     {
         // Called once at the start, so create things here
-        mp_img = new olc::Sprite( "D:\\Projects\\_images_\\bvb.png" );
-        mp_decal = new olc::Decal( mp_img );
-
-        m_nLayers = CreateLayer();
-
-
+        resetGame();
 
         return true;
     }
 
     bool OnUserUpdate( float fElapsedTime ) override
     {
+        if( GetKey( olc::Key::ESCAPE ).bPressed )
+        {
+            resetGame();
+        }
+
         Clear( olc::BLACK );
-
-#if 0
-        DrawLine( olc::vi2d( 30, 30 ), olc::vi2d( 280, 80 ), olc::BLUE );
-        DrawCircle( olc::vi2d( ScreenWidth() / 2, ScreenHeight() / 2 ), 20, olc::GREEN );
-        FillCircle( olc::vi2d( ScreenWidth() / 3, ScreenHeight() / 3 ), 20, olc::RED );
-        DrawString( olc::vi2d( 30, 200 ), "Here we go!", olc::DARK_GREEN, 2 );
-        DrawStringDecal( olc::vi2d( 30, 250 ), "Here we go!", olc::DARK_GREEN, { 1.2f, 0.5f } );
-
-        FillTriangle( { 30, 30 }, { 70, 30 }, { 35, 40 }, olc::DARK_BLUE );
-
-        const auto mousePos = GetMousePos();
-
-        if( mousePos.x > ScreenWidth() / 2 )
-        {
-            DrawString( olc::vi2d( ScreenWidth() / 2, 20 ), "RIGHT!", olc::DARK_GREEN, 2 );
-        }
-        else if( mousePos.x < ScreenWidth() / 2 )
-        {
-            DrawString( olc::vi2d( 10, 20 ), "LEFT!", olc::DARK_GREEN, 2 );
-        }
-
-        //DrawSprite( mousePos, mp_img );
-        DrawDecal( mousePos, mp_decal );
-
-        auto leftMouseButton = GetMouse( 0 );
-        if( leftMouseButton.bHeld )
-        {
-            DrawCircle( mousePos, 10, olc::GREEN );
-        }
-        auto rightMouseButton = GetMouse( 1 );
-        if( rightMouseButton.bHeld )
-        {
-            DrawCircle( mousePos, 10, olc::RED );
-        }
-
-        //std::string mousePosTxt =;
-#endif
-
-        if( GetKey( olc::Key::LEFT ).bHeld )
-        {
-            //m_player.m_pos.x -= 10 * fElapsedTime;
-        }
-
+        
         m_player.update( *this, fElapsedTime );
-
         m_player.draw( *this );
+
+        for( int i = 0; i < (int)m_vAsteroids.size(); ++i )
+        {
+            m_vAsteroids[ i ].update( *this, fElapsedTime );
+            m_vAsteroids[ i ].draw( *this );
+        }
+
 
         return true;
     }
