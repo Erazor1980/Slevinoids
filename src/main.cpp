@@ -7,7 +7,7 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
-#define DEBUG_INFO 0
+#define DEBUG_INFO 1
 
 class SpaceObject
 {
@@ -37,6 +37,7 @@ public:
             };
 
             m_bIsPlayer = true;
+            m_color     = olc::WHITE;
         }
         else   // asteroid
         {
@@ -50,8 +51,8 @@ public:
                 float noise = ( float )rand() / ( float )RAND_MAX * 0.4f + 0.8f;
                 
                 olc::vf2d ver;
-                ver.x = noise * sinf( ( ( float )i / ( float )verts ) * 6.28318f ) * m_size;
-                ver.y = noise * cosf( ( ( float )i / ( float )verts ) * 6.28318f ) * m_size;
+                ver.x = noise * sinf( ( ( float )i / ( float )verts ) * 6.28318f ) * m_size / 2.0f;
+                ver.y = noise * cosf( ( ( float )i / ( float )verts ) * 6.28318f ) * m_size / 2.0f;
                 m_vPoints.push_back( ver );
             }
 
@@ -60,11 +61,12 @@ public:
             {
                 m_angleDelta *= -1;
             }
-            m_bIsPlayer     = false;
+            m_bIsPlayer = false;
+            m_color     = olc::DARK_YELLOW;
         }
     }
 
-    void draw( olc::PixelGameEngine& pge )
+    void draw( olc::PixelGameEngine& pge ) const
     {
         // we do not want to change the points of the model. that's why we create pointsTransformed
         std::vector< olc::vf2d > pointsTransformed;
@@ -147,22 +149,27 @@ public:
 
 
         // stay within the game space
-        if( m_pos.x < -m_size )
+        if( m_pos.x < -m_size / 2.0f )
         {
-            m_pos.x = ( float )pge.ScreenWidth();
+            m_pos.x = ( float )pge.ScreenWidth() + m_size / 2.0f;
         }
-        if( m_pos.x >( float )pge.ScreenWidth() + m_size )
+        if( m_pos.x > ( float )pge.ScreenWidth() + m_size / 2.0f )
         {
-            m_pos.x = 0;
+            m_pos.x = -m_size / 2.0f;
         }
-        if( m_pos.y < -m_size )
+        if( m_pos.y < -m_size / 2.0f )
         {
-            m_pos.y = ( float )pge.ScreenHeight();
+            m_pos.y = ( float )pge.ScreenHeight() + m_size / 2.0f;
         }
-        if( m_pos.y >( float )pge.ScreenHeight() + m_size )
+        if( m_pos.y > ( float )pge.ScreenHeight() + m_size / 2.0f )
         {
-            m_pos.y = 0;
+            m_pos.y = -m_size / 2.0f;
         }
+    }
+
+    void setVelocity( olc::vf2d vel )
+    {
+        m_velocity = vel;
     }
 private:
     /* attributes */
@@ -175,7 +182,7 @@ private:
     olc::vf2d m_velocity    = { 0, 0 };
 
     /* appearance */
-    int m_size              = 20; // in pixels
+    int m_size              = 20; // in pixels (asteroids -> radius)
     olc::Pixel m_color      = olc::GREEN;
 
     std::vector< olc::vf2d > m_vPoints;    
@@ -187,6 +194,9 @@ class LukisTest : public olc::PixelGameEngine
 public:
     LukisTest()
     {
+        /* initialize random seed */
+        srand( unsigned int( time( NULL ) ) );
+
         // Name you application
         sAppName = "Luki's Test";
     }
@@ -200,16 +210,14 @@ public:
     {
         m_score = 0;
         m_player.init( { ScreenWidth() / 2.0f, ScreenHeight() / 2.0f }, 20, true );
+        m_player.setVelocity( { 0, 0 } );
 
         m_vAsteroids.clear();
         
-        createAsteroids( 2, m_player.getPos() );
+        createAsteroids( 3, m_player.getPos() );
     }
     void createAsteroids( const int number, olc::vf2d playerPos )
     {
-        /* initialize random seed */
-        srand( unsigned int( time( NULL ) ) );
-
         float distanceToShip = 100;
 
         for( int i = 0; i < number; ++i )
@@ -225,7 +233,14 @@ public:
 
             pos += playerPos;
 
-            obj.init( pos, 30, false );
+            obj.init( pos, 60, false );
+
+            // random velocity
+            float rndDirection = ( float )rand() / ( float )RAND_MAX * 6.28318f;
+            olc::vf2d vel;
+            vel.x += sin( rndDirection ) * 25;
+            vel.y += -cos( rndDirection ) * 25;
+            obj.setVelocity( vel );
 
             m_vAsteroids.push_back( obj );
         }
@@ -255,6 +270,12 @@ public:
         {
             m_vAsteroids[ i ].update( *this, fElapsedTime );
             m_vAsteroids[ i ].draw( *this );
+
+#if DEBUG_INFO
+            char text[ 100 ];
+            sprintf_s( text, "%d. pos: %f, %f", i, m_vAsteroids[ i ].getPos().x, m_vAsteroids[ i ].getPos().y );
+            DrawStringDecal( { 10.0f, i * 10.0f + 5 }, text, olc::WHITE, { 0.5, 0.5 } );
+#endif
         }
 
 
