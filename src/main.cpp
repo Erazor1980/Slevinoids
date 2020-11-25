@@ -27,6 +27,14 @@ public:
     {
         return m_pos;
     }
+    float getOrientation() const
+    {
+        return m_angle;
+    }
+    int getSize() const
+    {
+        return m_size;
+    }
 
     void init( const olc::vf2d position, const int size, const eObjectType type )
     {
@@ -73,6 +81,8 @@ public:
         }
         else if( eObjectType::BULLET == type )
         {
+            m_vPoints.push_back( position );
+
             m_type  = eObjectType::BULLET;
             m_color = olc::DARK_GREY;
         }
@@ -86,6 +96,13 @@ public:
 
         if( nPoints == 0 )
         {
+            return;
+        }
+        
+        if( eObjectType::BULLET == m_type )
+        {
+            pge.FillCircle( m_pos, 1, m_color );
+
             return;
         }
 
@@ -114,7 +131,6 @@ public:
 
             pge.DrawLine( pointsTransformed[ i % nPoints ], pointsTransformed[ j % nPoints ], m_color );
         }
-
 #if DEBUG_INFO
         pge.DrawStringDecal( m_pos, "angle: " + std::to_string( m_angle ), olc::WHITE, { 0.5, 0.5 } );
 #endif
@@ -187,6 +203,12 @@ public:
     void setVelocity( olc::vf2d vel )
     {
         m_velocity = vel;
+    }
+
+    //TEST, remove later!
+    void setPosition( olc::vf2d pos )
+    {
+        m_pos = pos;
     }
 private:
     /* attributes */
@@ -263,8 +285,8 @@ public:
             // random velocity
             float rndDirection = ( float )rand() / ( float )RAND_MAX * 6.28318f;
             olc::vf2d vel;
-            vel.x += sin( rndDirection ) * 25;
-            vel.y += -cos( rndDirection ) * 25;
+            vel.x += sinf( rndDirection ) * 25;
+            vel.y += -cosf( rndDirection ) * 25;
             obj.setVelocity( vel );
 
             m_vAsteroids.push_back( obj );
@@ -281,7 +303,19 @@ public:
 
     void shoot( const float timeElapsed )
     {
-        
+        SpaceObject bullet;
+
+        olc::vf2d vel;
+        vel.x = sinf( m_player.getOrientation() );
+        vel.y = -cosf( m_player.getOrientation() );
+
+        // place the ball at the front of the spaceship (that's why we shift the position a bit)
+        bullet.init( m_player.getPos() + vel * (float)m_player.getSize() * 0.7f, 2, SpaceObject::BULLET );
+
+        vel *= 80;
+        bullet.setVelocity( vel );
+
+        m_vBullets.push_back( bullet );
     }
 
     bool OnUserUpdate( float fElapsedTime ) override
@@ -311,15 +345,49 @@ public:
         }
 
         ////// BULLETS //////
-        if( GetKey( olc::Key::SPACE ).bHeld )
         {
+            if( GetKey( olc::Key::SPACE ).bPressed )
+            {
+                shoot( fElapsedTime );
+            }
+            for( int i = 0; i < ( int )m_vBullets.size(); ++i )
+            {
+                m_vBullets[ i ].update( *this, fElapsedTime );
+                m_vBullets[ i ].draw( *this );
+            }
 
-        }
+            //TODO: TEST, remove later!
+            if( GetKey( olc::Key::K ).bPressed )
+            {
+                for( int i = 0; i < ( int )m_vBullets.size(); ++i )
+                {
+                    m_vBullets[ i ].setPosition( { -100, 0 } );
+                }
+            }
+
+            // Remove bullets that have gone off screen
+            if( m_vBullets.size() > 0 )
+            {
+                auto it = m_vBullets.begin();
+                while( it != m_vBullets.end() )
+                {
+                    if( ( *it ).getPos().x < 1 || ( *it ).getPos().y < 1 || ( *it ).getPos().x >= ScreenWidth() - 1 || ( *it ).getPos().y >= ScreenHeight() - 1 )
+                    {
+                        it = m_vBullets.erase( it );
+                    }
+                    else
+                    {
+                        it++;
+                    }
+                }
+            }
+
 #if DEBUG_INFO
-        char text[ 100 ];
-        sprintf_s( text, "Number bullets: %d", (int)m_vBullets.size() );
-        DrawStringDecal( { 10.0f, ScreenHeight() - 20.0f }, text, olc::WHITE, { 0.5, 0.5 } );
+            char text[ 100 ];
+            sprintf_s( text, "Number bullets: %d", ( int )m_vBullets.size() );
+            DrawStringDecal( { 10.0f, ScreenHeight() - 20.0f }, text, olc::WHITE, { 0.5, 0.5 } );
 #endif
+        }
 
         ////// SCORE //////
         {
