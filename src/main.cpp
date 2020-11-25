@@ -17,10 +17,15 @@ public:
         sAppName = "Luki's Test";
     }
 
+    olc::Sprite* mp_img = nullptr;
+    olc::Decal* mp_decal = nullptr;
 public:
     bool OnUserCreate() override
     {
         // Called once at the start, so create things here
+        mp_img = new olc::Sprite( "D:\\Projects\\_images_\\bvb.png" );
+        mp_decal = new olc::Decal( mp_img );
+
         return true;
     }
 
@@ -43,6 +48,19 @@ public:
         else if( mousePos.x < ScreenWidth() / 2 )
         {
             DrawString( olc::vi2d( 10, 20 ), "LEFT!", olc::DARK_GREEN, 2 );
+        }
+
+        DrawSprite( mousePos, mp_img );
+
+        auto leftMouseButton = GetMouse( 0 );
+        if( leftMouseButton.bHeld )
+        {
+            DrawCircle( mousePos, 10, olc::GREEN );
+        }
+        auto rightMouseButton = GetMouse( 1 );
+        if( rightMouseButton.bHeld )
+        {
+            DrawCircle( mousePos, 10, olc::RED );
         }
 
         //std::string mousePosTxt =;
