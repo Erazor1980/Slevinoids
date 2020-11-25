@@ -16,18 +16,25 @@ public:
     {
     }
 
+    enum eObjectType
+    {
+        SPACESHIP,
+        ASTEROID,
+        BULLET
+    };
+
     olc::vf2d getPos() const
     {
         return m_pos;
     }
 
-    void init( const olc::vf2d position, const int size, const bool bIsPlayer )
+    void init( const olc::vf2d position, const int size, const eObjectType type )
     {
         m_vPoints.clear();
         m_pos   = position;
         m_size  = size;
         
-        if( bIsPlayer )
+        if( eObjectType::SPACESHIP == type )
         {
             /* player as triangle */
             m_vPoints = {
@@ -36,10 +43,10 @@ public:
                 { m_size / 4.0f, m_size * 1 / 3.0f },   // bottom right
             };
 
-            m_bIsPlayer = true;
-            m_color     = olc::WHITE;
+            m_type  = eObjectType::SPACESHIP;
+            m_color = olc::WHITE;
         }
-        else   // asteroid
+        else if ( eObjectType::ASTEROID == type )
         {
             // Create a "jagged" circle for the asteroid. It's important it remains
             // mostly circular, as we do a simple collision check against a perfect
@@ -61,8 +68,13 @@ public:
             {
                 m_angleDelta *= -1;
             }
-            m_bIsPlayer = false;
+            m_type      = eObjectType::ASTEROID;
             m_color     = olc::DARK_YELLOW;
+        }
+        else if( eObjectType::BULLET == type )
+        {
+            m_type  = eObjectType::BULLET;
+            m_color = olc::DARK_GREY;
         }
     }
 
@@ -111,7 +123,7 @@ public:
     void update( const olc::PixelGameEngine& pge, const float timeElapsed )
     {
         // orientation
-        if( true == m_bIsPlayer )
+        if( eObjectType::SPACESHIP == m_type )
         {
             if( pge.GetKey( olc::Key::LEFT ).bHeld )
             {
@@ -147,6 +159,11 @@ public:
         // VELOCITY changes POSITION (with respect to time)
         m_pos += m_velocity * timeElapsed;
 
+        /* bullets will be erased after leaving the game space, no need for further checks here */
+        if( eObjectType::BULLET == m_type )
+        {
+            return;
+        }
 
         // stay within the game space
         if( m_pos.x < -m_size / 2.0f )
@@ -175,7 +192,8 @@ private:
     /* attributes */
     float m_angle           = 0.0f;
     float m_angleDelta      = 0.0f;  // for asteroids only, constant rotation speed
-    bool m_bIsPlayer        = true;  // otherwise it is an asteroid
+    //bool m_bIsPlayer        = true;  // otherwise it is an asteroid
+    eObjectType m_type      = eObjectType::ASTEROID;
 
     olc::vf2d m_pos         = { 100, 100 };
 
@@ -201,18 +219,25 @@ public:
         sAppName = "Luki's Test";
     }
 
+private:
     SpaceObject m_player;
     std::vector< SpaceObject > m_vAsteroids;
+    std::vector< SpaceObject > m_vBullets;
+
+    const float m_timeBetweenShots = 200.0f; // in ms
+    float m_timeSinceLastShot = 0.0f;
 
     int m_score = 0;
 public:
     void resetGame()
     {
         m_score = 0;
-        m_player.init( { ScreenWidth() / 2.0f, ScreenHeight() / 2.0f }, 20, true );
+        m_player.init( { ScreenWidth() / 2.0f, ScreenHeight() / 2.0f }, 20, SpaceObject::eObjectType::SPACESHIP );
         m_player.setVelocity( { 0, 0 } );
+        m_timeSinceLastShot = 0.0f;
 
         m_vAsteroids.clear();
+        m_vBullets.clear();
         
         createAsteroids( 3, m_player.getPos() );
     }
@@ -233,7 +258,7 @@ public:
 
             pos += playerPos;
 
-            obj.init( pos, 60, false );
+            obj.init( pos, 60, SpaceObject::eObjectType::ASTEROID );
 
             // random velocity
             float rndDirection = ( float )rand() / ( float )RAND_MAX * 6.28318f;
@@ -254,6 +279,11 @@ public:
         return true;
     }
 
+    void shoot( const float timeElapsed )
+    {
+        
+    }
+
     bool OnUserUpdate( float fElapsedTime ) override
     {
         if( GetKey( olc::Key::ESCAPE ).bPressed )
@@ -263,9 +293,11 @@ public:
 
         Clear( olc::BLACK );
         
+        ////// PLAYER //////
         m_player.update( *this, fElapsedTime );
         m_player.draw( *this );
 
+        ////// ASTEROIDS //////
         for( int i = 0; i < (int)m_vAsteroids.size(); ++i )
         {
             m_vAsteroids[ i ].update( *this, fElapsedTime );
@@ -278,6 +310,23 @@ public:
 #endif
         }
 
+        ////// BULLETS //////
+        if( GetKey( olc::Key::SPACE ).bHeld )
+        {
+
+        }
+#if DEBUG_INFO
+        char text[ 100 ];
+        sprintf_s( text, "Number bullets: %d", (int)m_vBullets.size() );
+        DrawStringDecal( { 10.0f, ScreenHeight() - 20.0f }, text, olc::WHITE, { 0.5, 0.5 } );
+#endif
+
+        ////// SCORE //////
+        {
+            char text[ 100 ];
+            sprintf_s( text, "SCORE: %d", m_score );
+            DrawStringDecal( { ScreenWidth() - 90.0f, 10.0f }, text, olc::BLUE, { 0.8f, 0.8f } );
+        }
 
         return true;
     }
