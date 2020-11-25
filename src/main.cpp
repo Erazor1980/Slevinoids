@@ -8,13 +8,13 @@
 #include "olcPixelGameEngine.h"
 
 // Override base class with your custom functionality
-class Example : public olc::PixelGameEngine
+class LukisTest : public olc::PixelGameEngine
 {
 public:
-    Example()
+    LukisTest()
     {
         // Name you application
-        sAppName = "Example";
+        sAppName = "Luki's Test";
     }
 
 public:
@@ -26,18 +26,35 @@ public:
 
     bool OnUserUpdate( float fElapsedTime ) override
     {
-        // Called once per frame, draws random coloured pixels
-        for( int x = 0; x < ScreenWidth(); x++ )
-            for( int y = 0; y < ScreenHeight(); y++ )
-                Draw( x, y, olc::Pixel( rand() % 256, rand() % 256, rand() % 256 ) );
+        Clear( olc::BLACK );
+
+        DrawLine( olc::vi2d( 30, 30 ), olc::vi2d( 280, 80 ), olc::BLUE );
+        DrawCircle( olc::vi2d( ScreenWidth() / 2, ScreenHeight() / 2 ), 20, olc::GREEN );
+        FillCircle( olc::vi2d( ScreenWidth() / 3, ScreenHeight() / 3 ), 20, olc::RED );
+        DrawString( olc::vi2d( 30, 200 ), "Here we go!", olc::DARK_GREEN, 2 );
+        DrawStringDecal( olc::vi2d( 30, 250 ), "Here we go!", olc::DARK_GREEN, { 1.2f, 0.5f } );
+
+        const auto mousePos = GetMousePos();
+
+        if( mousePos.x > ScreenWidth() / 2 )
+        {
+            DrawString( olc::vi2d( ScreenWidth() / 2, 20 ), "RIGHT!", olc::DARK_GREEN, 2 );
+        }
+        else if( mousePos.x < ScreenWidth() / 2 )
+        {
+            DrawString( olc::vi2d( 10, 20 ), "LEFT!", olc::DARK_GREEN, 2 );
+        }
+
+        //std::string mousePosTxt =;
+
         return true;
     }
 };
 
 int main()
 {
-    Example demo;
-    if( demo.Construct( 256, 140, 4, 4 ) )
+    LukisTest demo;
+    if( demo.Construct( 400, 300, 2, 2 ) )
         demo.Start();
     return 0;
 }
