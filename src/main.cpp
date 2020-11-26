@@ -290,6 +290,43 @@ private:
     int m_score = 0;
     int m_nNewAsteroids = 3;
 public:
+    // draw everything to screen
+    void composeFrame()
+    {
+        ////// ASTEROIDS //////
+        for( int i = 0; i < ( int )m_vAsteroids.size(); ++i )
+        {
+            m_vAsteroids[ i ].draw( *this );
+
+#if DEBUG_INFO
+            char text[ 100 ];
+            sprintf_s( text, "%d. pos: %f, %f", i, m_vAsteroids[ i ].getPos().x, m_vAsteroids[ i ].getPos().y );
+            DrawStringDecal( { 10.0f, i * 10.0f + 5 }, text, olc::WHITE, { 0.5, 0.5 } );
+#endif
+        }
+
+        ////// PLAYER //////
+        m_player.draw( *this );
+
+        ////// BULLETS //////
+        for( int i = 0; i < ( int )m_vBullets.size(); ++i )
+        {
+            m_vBullets[ i ].draw( *this );
+        }
+#if DEBUG_INFO
+        char text[ 100 ];
+        sprintf_s( text, "Number bullets: %d", ( int )m_vBullets.size() );
+        DrawStringDecal( { 10.0f, ScreenHeight() - 20.0f }, text, olc::WHITE, { 0.5, 0.5 } );
+#endif
+
+        ////// SCORE //////
+        {
+            char text[ 100 ];
+            sprintf_s( text, "SCORE: %d", m_score );
+            DrawStringDecal( { ScreenWidth() - 90.0f, 10.0f }, text, olc::BLUE, { 0.8f, 0.8f } );
+        }
+    }
+
     void resetGame()
     {
         m_score = 0;
@@ -441,7 +478,7 @@ public:
             // distance player to current asteroid
             const float dist = ( a.getPos() - m_player.getPos() ).mag();
 
-            if( dist < a.getSize() / 2.0f + m_player.getSize() )
+            if( dist < a.getSize() / 2.0f + m_player.getSize() / 3.0f )
             {
 #if DEBUG_INFO
                 DrawCircle( m_player.getPos(), 20, olc::RED );
@@ -462,20 +499,12 @@ public:
         
         ////// PLAYER //////
         m_player.update( *this, fElapsedTime );
-        m_player.draw( *this );
         checkForCollision();
 
         ////// ASTEROIDS //////
         for( int i = 0; i < (int)m_vAsteroids.size(); ++i )
         {
             m_vAsteroids[ i ].update( *this, fElapsedTime );
-            m_vAsteroids[ i ].draw( *this );
-
-#if DEBUG_INFO
-            char text[ 100 ];
-            sprintf_s( text, "%d. pos: %f, %f", i, m_vAsteroids[ i ].getPos().x, m_vAsteroids[ i ].getPos().y );
-            DrawStringDecal( { 10.0f, i * 10.0f + 5 }, text, olc::WHITE, { 0.5, 0.5 } );
-#endif
         }
 
         ////// BULLETS //////
@@ -487,7 +516,6 @@ public:
             for( int i = 0; i < ( int )m_vBullets.size(); ++i )
             {
                 m_vBullets[ i ].update( *this, fElapsedTime );
-                m_vBullets[ i ].draw( *this );
             }
 
             //TODO: TEST, remove later!
@@ -516,12 +544,6 @@ public:
                 }
             }
 
-#if DEBUG_INFO
-            char text[ 100 ];
-            sprintf_s( text, "Number bullets: %d", ( int )m_vBullets.size() );
-            DrawStringDecal( { 10.0f, ScreenHeight() - 20.0f }, text, olc::WHITE, { 0.5, 0.5 } );
-#endif
-
             checkForHits();
         }
 
@@ -533,12 +555,7 @@ public:
             createAsteroids( m_nNewAsteroids, m_player.getPos(), 100, 60, 3, m_vAsteroids );
         }
 
-        ////// SCORE //////
-        {
-            char text[ 100 ];
-            sprintf_s( text, "SCORE: %d", m_score );
-            DrawStringDecal( { ScreenWidth() - 90.0f, 10.0f }, text, olc::BLUE, { 0.8f, 0.8f } );
-        }
+        composeFrame();
 
         return true;
     }
