@@ -2,7 +2,7 @@
 #include "olcPixelGameEngine.h"
 
 #define BULLET_SPEED        120.0f
-#define MAX_SPEED_SPACESHIP 50.0f
+#define MAX_SPEED_SPACESHIP 70.0f
 
 class SpaceObject
 {

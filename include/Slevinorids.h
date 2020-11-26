@@ -10,6 +10,7 @@ class Slevinorids : public olc::PixelGameEngine
 {
 public:
     Slevinorids();
+    ~Slevinorids();
 
     bool OnUserCreate() override;
     bool OnUserUpdate( float timeElapsed ) override;
@@ -54,6 +55,13 @@ private:
     std::vector< SpaceObject > m_vBullets;
     std::vector< Explosion > m_vExplosions;
 
+    struct Star
+    {
+        olc::vi2d m_pos;
+        olc::vf2d m_vel;
+    };
+    std::vector< Star > m_vStars;
+
     const float m_timeBetweenShots = 0.200f; // in sec
     float m_timeSinceLastShot = 0.0f;
 
@@ -62,6 +70,11 @@ private:
     int m_nNewAsteroids = 3;
 
     bool m_bGameOver = false;
+
+    olc::Sprite* mp_moonImg = nullptr;
+    olc::Decal* mp_moonDecal = nullptr;
+
+    int m_bgLayer;  // background layer
 
     // for debug info only
     bool m_bDebugInfo = false;

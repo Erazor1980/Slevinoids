@@ -9,10 +9,32 @@ Slevinorids::Slevinorids()
     sAppName = "Slevinorids";
 }
 
+Slevinorids::~Slevinorids()
+{
+    if( mp_moonImg )
+    {
+        delete mp_moonImg;
+        mp_moonImg = nullptr;
+    }
+    if( mp_moonDecal )
+    {
+        delete mp_moonDecal;
+        mp_moonDecal = nullptr;
+    }
+}
+
 bool Slevinorids::OnUserCreate()
 {
     // Called once at the start, so create things here
     resetGame();
+
+    mp_moonImg = new olc::Sprite( "../data/moon.png" );
+    mp_moonDecal = new olc::Decal( mp_moonImg );
+
+    m_bgLayer = CreateLayer();
+
+    EnableLayer( m_bgLayer, true );
+    
 
     return true;
 }
@@ -48,7 +70,19 @@ bool Slevinorids::OnUserUpdate( float timeElapsed )
 
 void Slevinorids::composeFrame( const bool bDebugInfo )
 {
-    Clear( olc::BLACK );
+    Clear( olc::BLANK );
+
+    ///// MOON /////
+    SetDrawTarget( m_bgLayer );
+    DrawDecal( { ScreenWidth() / 3.0f, ScreenHeight() / 3.0f }, mp_moonDecal, { 0.3f, 0.3f } );
+    SetDrawTarget( nullptr );
+
+    ///// STARS /////
+    for( int i = 0; i < ( int )m_vStars.size(); ++i )
+    {
+        Draw( m_vStars[ i ].m_pos );
+    }
+
 
     ////// ASTEROIDS //////
     for( int i = 0; i < ( int )m_vAsteroids.size(); ++i )
@@ -183,6 +217,18 @@ void Slevinorids::resetGame()
     m_vExplosions.clear();
 
     createAsteroids( 3, m_player.getPos(), 100, 60, m_nNewAsteroids, m_vAsteroids );
+
+    // stars
+    m_vStars.clear();
+
+    const int nStars = 500;
+    for( int i = 0; i < nStars; ++i )
+    {
+        const int x = rand() % ScreenWidth();
+        const int y = rand() % ScreenHeight();
+
+        m_vStars.push_back( { { x, y }, { 0.0f , 0.0f } } );
+    }
 }
 
 void Slevinorids::createAsteroids( const int number,

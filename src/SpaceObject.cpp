@@ -53,7 +53,7 @@ void SpaceObject::init( const olc::vf2d position, const int size, const eObjectT
     else if( eObjectType::BULLET == type )
     {
         m_type = eObjectType::BULLET;
-        m_color = olc::DARK_GREY;
+        m_color = olc::DARK_RED;
     }
 }
 
