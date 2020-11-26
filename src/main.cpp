@@ -7,7 +7,7 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
-#define DEBUG_INFO 0
+#define DEBUG_INFO 1
 
 #define BULLET_SPEED        120.0f
 #define MAX_SPEED_SPACESHIP 50.0f
@@ -364,6 +364,7 @@ public:
         m_vBullets.push_back( bullet );
     }
 
+    // checks if a bullet hits an asteroid (including erasing and creating of new asteroids)
     void checkForHits()
     {
         // new asteroids after collision are stored here, to not mess up the loop/deleting
@@ -432,6 +433,24 @@ public:
         }
     }
 
+    // checks if the spaceship collides with an asteroid
+    void checkForCollision()
+    {
+        for( const auto& a : m_vAsteroids )
+        {
+            // distance player to current asteroid
+            const float dist = ( a.getPos() - m_player.getPos() ).mag();
+
+            if( dist < a.getSize() / 2.0f + m_player.getSize() )
+            {
+#if DEBUG_INFO
+                DrawCircle( m_player.getPos(), 20, olc::RED );
+                DrawLine( m_player.getPos(), a.getPos(), olc::DARK_YELLOW );
+#endif
+            }
+        }
+    }
+
     bool OnUserUpdate( float fElapsedTime ) override
     {
         if( GetKey( olc::Key::ESCAPE ).bPressed )
@@ -444,6 +463,7 @@ public:
         ////// PLAYER //////
         m_player.update( *this, fElapsedTime );
         m_player.draw( *this );
+        checkForCollision();
 
         ////// ASTEROIDS //////
         for( int i = 0; i < (int)m_vAsteroids.size(); ++i )
@@ -510,7 +530,7 @@ public:
         {
             // for every new round 1 more asteroid is created
             m_nNewAsteroids++;
-            createAsteroids( m_nNewAsteroids, m_player.getPos(), 80, 60, 3, m_vAsteroids );
+            createAsteroids( m_nNewAsteroids, m_player.getPos(), 100, 60, 3, m_vAsteroids );
         }
 
         ////// SCORE //////
