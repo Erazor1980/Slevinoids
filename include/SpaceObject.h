@@ -65,6 +65,7 @@ private:
     /* appearance */
     int m_size = 20; // in pixels (asteroids -> radius)
     olc::Pixel m_color = olc::GREEN;
+    olc::Pixel m_borderColor = olc::WHITE;
     bool m_bAccelerate = false;    // for drawing effect only
 
     std::vector< olc::vf2d > m_vPoints;

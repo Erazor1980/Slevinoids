@@ -22,6 +22,7 @@ void SpaceObject::init( const olc::vf2d position, const int size, const eObjectT
 
         m_type = eObjectType::SPACESHIP;
         m_color = olc::DARK_CYAN;
+        m_borderColor = olc::CYAN;
     }
     else if( eObjectType::ASTEROID == type )
     {
@@ -47,6 +48,7 @@ void SpaceObject::init( const olc::vf2d position, const int size, const eObjectT
         }
         m_type = eObjectType::ASTEROID;
         m_color = olc::DARK_YELLOW;
+        m_borderColor = olc::YELLOW;
     }
     else if( eObjectType::BULLET == type )
     {
@@ -91,12 +93,43 @@ void SpaceObject::draw( olc::PixelGameEngine& pge, const bool bDebugInfo ) const
         pointsTransformed[ i ] += m_pos;
     }
 
-    // draw closed polygon
-    for( int i = 0; i < nPoints + 1; i++ )
+    // draw closed filled polygon
     {
-        int j = ( i + 1 );
+        // find closes point to center
+        int cpIdx;
+        float smallestDinstance = 100000;
+        for( int i = 0; i < nPoints; i++ )
+        {
+            float currDist = ( pointsTransformed[ i ] - m_pos ).mag();
+            if( currDist < smallestDinstance )
+            {
+                cpIdx = i;
+                smallestDinstance = currDist;
+            }
+        }
 
-        pge.DrawLine( pointsTransformed[ i % nPoints ], pointsTransformed[ j % nPoints ], m_color );
+        // draw triangle from current 2 points and the closes pointer (cpIdx)
+        for( int i = 0; i < nPoints + 1; i++ )
+        {
+            int j = ( i + 1 );
+            if( i == cpIdx || j == cpIdx )
+            {
+                continue;
+            }
+
+            pge.FillTriangle( pointsTransformed[ i % nPoints ], pointsTransformed[ j % nPoints ], pointsTransformed[ cpIdx ], m_color );
+        }
+
+        // draw closed polygon
+        for( int i = 0; i < nPoints + 1; i++ )
+        {
+            int j = ( i + 1 );
+
+            pge.DrawLine( pointsTransformed[ i % nPoints ], pointsTransformed[ j % nPoints ], m_borderColor );
+        }
+
+        //pge.DrawCircle( pointsTransformed[ cpIdx ], 3, olc::RED );
+        //pge.DrawCircle( m_pos, 3, olc::RED );
     }
 
     // draw acceleration effect
@@ -107,6 +140,7 @@ void SpaceObject::draw( olc::PixelGameEngine& pge, const bool bDebugInfo ) const
         dir.y = -cosf( m_angle );
         dir *= -0.5f * m_size;
         pge.FillCircle( m_pos + dir, 2, olc::YELLOW );
+        pge.DrawCircle( m_pos + dir, 3, olc::RED );
     }
 
     if( bDebugInfo )

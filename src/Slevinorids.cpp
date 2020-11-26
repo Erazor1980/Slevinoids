@@ -85,6 +85,13 @@ void Slevinorids::composeFrame( const bool bDebugInfo )
         DrawStringDecal( { 10.0f, ScreenHeight() - 20.0f }, text, olc::WHITE, { 0.5, 0.5 } );
     }
 
+    ///// EXPLOSIONS /////
+    for( int i = 0; i < ( int )m_vExplosions.size(); ++i )
+    {
+        FillCircle( m_vExplosions[ i ].m_pos, 2, olc::WHITE );
+        DrawCircle( m_vExplosions[ i ].m_pos, 3, olc::RED );
+    }
+
     ////// SCORE //////
     if( !m_bGameOver )
     {
@@ -147,6 +154,9 @@ void Slevinorids::updateGame( const float timeElapsed )
         checkForHits();
     }
 
+    ///// EXPLOSIONS /////
+    updateExplosions( timeElapsed );
+
     ///// NEXT LEVEL /////
     if( m_vAsteroids.empty() )
     {
@@ -170,6 +180,7 @@ void Slevinorids::resetGame()
 
     m_vAsteroids.clear();
     m_vBullets.clear();
+    m_vExplosions.clear();
 
     createAsteroids( 3, m_player.getPos(), 100, 60, m_nNewAsteroids, m_vAsteroids );
 }
@@ -252,6 +263,8 @@ void Slevinorids::checkForHits()
             // asteroid hit by the bullet
             if( dist < ( *it ).getSize() / 2.0f )
             {
+                m_vExplosions.push_back( { m_vBullets[ i ].getPos(), 0 } );
+
                 m_vBullets[ i ].setPositionToInvalid();
 
                 // asteroid destroyed
@@ -352,5 +365,24 @@ void Slevinorids::gameOverScreen()
     sprintf_s( text, "FINAL SCORE: %d", m_score );
     DrawStringDecal( pos + olc::vf2d( 70.0f, 50.0f ), text, olc::BLUE, { 1.2f, 1.2f } );
     sprintf_s( text, "Press 'ENTER' to restart" );
-    DrawStringDecal( pos + olc::vf2d( 80.0f, 70.0f ), text, olc::WHITE, { 0.6f, 0.6f } );
+    DrawStringDecal( pos + olc::vf2d( 90.0f, 70.0f ), text, olc::WHITE, { 0.6f, 0.6f } );
+}
+
+void Slevinorids::updateExplosions( const float timeElapsed )
+{
+    auto it = m_vExplosions.begin();
+
+    while( it != m_vExplosions.end() )
+    {
+        ( *it ).m_duration += timeElapsed;
+
+        if( ( *it ).m_duration > 0.1f )
+        {
+            it = m_vExplosions.erase( it );
+        }
+        else
+        {
+            it++;
+        }
+    }
 }

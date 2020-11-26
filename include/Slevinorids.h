@@ -15,6 +15,11 @@ public:
     bool OnUserUpdate( float timeElapsed ) override;
 
 private:
+    struct Explosion
+    {
+        olc::vf2d m_pos;
+        float m_duration = 0.0;
+    };
     // draw everything to screen
     void composeFrame( const bool bDebugInfo = false );
 
@@ -42,10 +47,12 @@ private:
     // draws game over 
     void gameOverScreen();
 
+    void updateExplosions( const float timeElapsed );
 private:
     SpaceObject m_player;
     std::vector< SpaceObject > m_vAsteroids;
     std::vector< SpaceObject > m_vBullets;
+    std::vector< Explosion > m_vExplosions;
 
     const float m_timeBetweenShots = 0.200f; // in sec
     float m_timeSinceLastShot = 0.0f;
