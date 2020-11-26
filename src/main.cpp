@@ -26,6 +26,7 @@ public:
         BULLET
     };
 
+    // getter functions
     olc::vf2d getPos() const
     {
         return m_pos;
@@ -39,11 +40,12 @@ public:
         return m_size;
     }
 
-    void init( const olc::vf2d position, const int size, const eObjectType type )
+    void init( const olc::vf2d position, const int size, const eObjectType type, const int life = 1 )
     {
         m_vPoints.clear();
         m_pos   = position;
         m_size  = size;
+        m_life  = life;
         
         if( eObjectType::SPACESHIP == type )
         {
@@ -144,6 +146,7 @@ public:
 #if DEBUG_INFO
         pge.DrawStringDecal( m_pos, "angle: " + std::to_string( m_angle ), olc::WHITE, { 0.5, 0.5 } );
         pge.DrawStringDecal( m_pos + olc::vd2d( 0.0f, 8.0f ), "speed: " + std::to_string( m_velocity.mag() ), olc::WHITE, { 0.5, 0.5 } );
+        pge.DrawStringDecal( m_pos + olc::vd2d( 0.0f, 16.0f ), "life: " + std::to_string( m_life ), olc::WHITE, { 0.5, 0.5 } );
 #endif
     }
 
@@ -165,8 +168,8 @@ public:
             if( pge.GetKey( olc::Key::UP ).bHeld )
             {
                 // ACCELERATION changes VELOCITY (with respect to time)
-                m_velocity.x += sin( m_angle ) * 40.0f * timeElapsed;
-                m_velocity.y += -cos( m_angle ) * 40.0f * timeElapsed;
+                m_velocity.x += sinf( m_angle ) * 40.0f * timeElapsed;
+                m_velocity.y += -cosf( m_angle ) * 40.0f * timeElapsed;
                                 
                 m_bAccelerate = true;
 
@@ -230,13 +233,22 @@ public:
         m_velocity = vel;
     }
 
-    //TEST, remove later!
-    void setPosition( olc::vf2d pos )
+    // used e.g. for destroying bullets (when hitting an asteroid)
+    void setPositionToInvalid()
     {
-        m_pos = pos;
+        m_pos.x = -1000;;
+    }
+
+    // object is hit, returns true, if life is <= 0 after the hit
+    bool hit()
+    {
+        m_life--;
+
+        return ( m_life <= 0 );
     }
 private:
     /* attributes */
+    int m_life              = 1;
     float m_angle           = 0.0f;
     float m_angleDelta      = 0.0f;  // for asteroids only, constant rotation speed
     //bool m_bIsPlayer        = true;  // otherwise it is an asteroid
@@ -301,12 +313,12 @@ public:
             float rndAngle = ( float )rand() / ( float )RAND_MAX * 6.28318f;
             distanceToShip += ( float )rand() / ( float )RAND_MAX * 10;
             olc::vf2d pos;
-            pos.x += sin( rndAngle ) * distanceToShip;
-            pos.y += -cos( rndAngle ) * distanceToShip;
+            pos.x += sinf( rndAngle ) * distanceToShip;
+            pos.y += -cosf( rndAngle ) * distanceToShip;
 
             pos += playerPos;
 
-            obj.init( pos, 60, SpaceObject::eObjectType::ASTEROID );
+            obj.init( pos, 60, SpaceObject::eObjectType::ASTEROID, 2 );
 
             // random velocity
             float rndDirection = ( float )rand() / ( float )RAND_MAX * 6.28318f;
@@ -342,6 +354,38 @@ public:
         bullet.setVelocity( vel );
 
         m_vBullets.push_back( bullet );
+    }
+
+    void checkForHits()
+    {
+        // new asteroids after collision are stored here, to not mess up the loop/deleting
+        std::vector< SpaceObject > vNewAsteroids;
+
+        for( int i = 0; i < ( int )m_vBullets.size(); ++i )
+        {
+            auto it = m_vAsteroids.begin();
+
+            while( it != m_vAsteroids.end() )
+            {
+                // calc distance from bullet to the current asteroid
+                const float dist = ( m_vBullets[ i ].getPos() - ( *it ).getPos() ).mag();
+
+                if( dist < ( *it ).getSize() / 2.0f )
+                {
+                    m_vBullets[ i ].setPositionToInvalid();
+
+                    if( true == ( *it ).hit() )
+                    {
+                        it = m_vAsteroids.erase( it );
+                        //TODO create 2 new asteroids here! (if not already too small)
+
+                        continue;
+                    }
+                }
+
+                it++;
+            }
+        }
     }
 
     bool OnUserUpdate( float fElapsedTime ) override
@@ -387,7 +431,7 @@ public:
             {
                 for( int i = 0; i < ( int )m_vBullets.size(); ++i )
                 {
-                    m_vBullets[ i ].setPosition( { -100, 0 } );
+                    m_vBullets[ i ].setPositionToInvalid();
                 }
             }
 
@@ -413,6 +457,8 @@ public:
             sprintf_s( text, "Number bullets: %d", ( int )m_vBullets.size() );
             DrawStringDecal( { 10.0f, ScreenHeight() - 20.0f }, text, olc::WHITE, { 0.5, 0.5 } );
 #endif
+
+            checkForHits();
         }
 
         ////// SCORE //////
