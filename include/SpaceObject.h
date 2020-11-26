@@ -1,8 +1,6 @@
 #pragma once
 #include "olcPixelGameEngine.h"
 
-#define DEBUG_INFO 1
-
 #define BULLET_SPEED        120.0f
 #define MAX_SPEED_SPACESHIP 50.0f
 
@@ -21,7 +19,6 @@ public:
     void init( const olc::vf2d position, const int size, const eObjectType type, const int life = 1 );
     void draw( olc::PixelGameEngine& pge, const bool bDebugInfo = false ) const;   
     void update( const olc::PixelGameEngine& pge, const float timeElapsed );
-
 
     // getter functions
     olc::vf2d getPos() const
@@ -42,15 +39,11 @@ public:
     {
         m_velocity = vel;
     }
-
-    // used e.g. for destroying bullets (when hitting an asteroid)
-    void setPositionToInvalid()
+    void setPositionToInvalid() // used e.g. for destroying bullets (when hitting an asteroid)
     {
         m_pos.x = -1000;;
     }
-
-    // object is hit, returns true, if life is <= 0 after the hit
-    bool hit()
+    bool hit() // object is hit, returns true, if life is <= 0 after the hit
     {
         m_life--;
 
@@ -61,7 +54,6 @@ private:
     int m_life = 1;
     float m_angle = 0.0f;
     float m_angleDelta = 0.0f;  // for asteroids only, constant rotation speed
-                                //bool m_bIsPlayer        = true;  // otherwise it is an asteroid
     eObjectType m_type = eObjectType::ASTEROID;
 
     olc::vf2d m_pos = { 100, 100 };

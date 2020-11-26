@@ -57,8 +57,8 @@ void Slevinorids::composeFrame( const bool bDebugInfo )
     m_player.draw( *this, bDebugInfo );
     if( bDebugInfo && m_bCollision )
     {
-        DrawCircle( m_player.getPos(), 20, olc::RED );
-        DrawLine( m_player.getPos(), m_CollisionAsteroidPos, olc::DARK_YELLOW );
+        DrawCircle( m_player.getPos(), m_player.getSize() / 2, olc::RED );
+        DrawLine( m_player.getPos(), m_CollisionAsteroidPos, olc::RED );
     }
 
     ////// BULLETS //////

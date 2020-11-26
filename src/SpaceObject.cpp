@@ -21,7 +21,7 @@ void SpaceObject::init( const olc::vf2d position, const int size, const eObjectT
         };
 
         m_type = eObjectType::SPACESHIP;
-        m_color = olc::WHITE;
+        m_color = olc::DARK_CYAN;
     }
     else if( eObjectType::ASTEROID == type )
     {
