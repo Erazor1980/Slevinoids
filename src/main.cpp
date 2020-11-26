@@ -279,20 +279,34 @@ public:
         sAppName = "Slevinorids";
     }
 
+    bool OnUserCreate() override
+    {
+        // Called once at the start, so create things here
+        resetGame();
+
+        return true;
+    }
+    bool OnUserUpdate( float timeElapsed ) override
+    {
+        if( GetKey( olc::Key::ESCAPE ).bPressed )
+        {
+            resetGame();
+        }
+
+        updateGame( timeElapsed );
+
+        composeFrame();
+
+        return true;
+    }
+
 private:
-    SpaceObject m_player;
-    std::vector< SpaceObject > m_vAsteroids;
-    std::vector< SpaceObject > m_vBullets;
 
-    const float m_timeBetweenShots = 200.0f; // in ms
-    float m_timeSinceLastShot = 0.0f;
-
-    int m_score = 0;
-    int m_nNewAsteroids = 3;
-public:
     // draw everything to screen
     void composeFrame()
     {
+        Clear( olc::BLACK );
+
         ////// ASTEROIDS //////
         for( int i = 0; i < ( int )m_vAsteroids.size(); ++i )
         {
@@ -324,6 +338,68 @@ public:
             char text[ 100 ];
             sprintf_s( text, "SCORE: %d", m_score );
             DrawStringDecal( { ScreenWidth() - 90.0f, 10.0f }, text, olc::BLUE, { 0.8f, 0.8f } );
+        }
+    }
+
+    // update all game entities
+    void updateGame( const float timeElapsed )
+    {
+        ////// PLAYER //////
+        m_player.update( *this, timeElapsed );
+        checkForCollision();
+
+        ////// ASTEROIDS //////
+        for( int i = 0; i < ( int )m_vAsteroids.size(); ++i )
+        {
+            m_vAsteroids[ i ].update( *this, timeElapsed );
+        }
+
+        ////// BULLETS //////
+        {
+            if( GetKey( olc::Key::SPACE ).bPressed )
+            {
+                shoot( timeElapsed );
+            }
+            for( int i = 0; i < ( int )m_vBullets.size(); ++i )
+            {
+                m_vBullets[ i ].update( *this, timeElapsed );
+            }
+
+            //TODO: TEST, remove later!
+            if( GetKey( olc::Key::K ).bPressed )
+            {
+                for( int i = 0; i < ( int )m_vBullets.size(); ++i )
+                {
+                    m_vBullets[ i ].setPositionToInvalid();
+                }
+            }
+
+            // Remove bullets that have gone off screen
+            if( m_vBullets.size() > 0 )
+            {
+                auto it = m_vBullets.begin();
+                while( it != m_vBullets.end() )
+                {
+                    if( ( *it ).getPos().x < 1 || ( *it ).getPos().y < 1 || ( *it ).getPos().x >= ScreenWidth() - 1 || ( *it ).getPos().y >= ScreenHeight() - 1 )
+                    {
+                        it = m_vBullets.erase( it );
+                    }
+                    else
+                    {
+                        it++;
+                    }
+                }
+            }
+
+            checkForHits();
+        }
+
+        ///// NEXT ROUND /////
+        if( m_vAsteroids.empty() )
+        {
+            // for every new round 1 more asteroid is created
+            m_nNewAsteroids++;
+            createAsteroids( m_nNewAsteroids, m_player.getPos(), 100, 60, 3, m_vAsteroids );
         }
     }
 
@@ -374,14 +450,6 @@ public:
 
             vAsteroids.push_back( obj );
         }
-    }
-
-    bool OnUserCreate() override
-    {
-        // Called once at the start, so create things here
-        resetGame();
-
-        return true;
     }
 
     void shoot( const float timeElapsed )
@@ -488,77 +556,16 @@ public:
         }
     }
 
-    bool OnUserUpdate( float fElapsedTime ) override
-    {
-        if( GetKey( olc::Key::ESCAPE ).bPressed )
-        {
-            resetGame();
-        }
+    private:
+        SpaceObject m_player;
+        std::vector< SpaceObject > m_vAsteroids;
+        std::vector< SpaceObject > m_vBullets;
 
-        Clear( olc::BLACK );
-        
-        ////// PLAYER //////
-        m_player.update( *this, fElapsedTime );
-        checkForCollision();
+        const float m_timeBetweenShots = 200.0f; // in ms
+        float m_timeSinceLastShot = 0.0f;
 
-        ////// ASTEROIDS //////
-        for( int i = 0; i < (int)m_vAsteroids.size(); ++i )
-        {
-            m_vAsteroids[ i ].update( *this, fElapsedTime );
-        }
-
-        ////// BULLETS //////
-        {
-            if( GetKey( olc::Key::SPACE ).bPressed )
-            {
-                shoot( fElapsedTime );
-            }
-            for( int i = 0; i < ( int )m_vBullets.size(); ++i )
-            {
-                m_vBullets[ i ].update( *this, fElapsedTime );
-            }
-
-            //TODO: TEST, remove later!
-            if( GetKey( olc::Key::K ).bPressed )
-            {
-                for( int i = 0; i < ( int )m_vBullets.size(); ++i )
-                {
-                    m_vBullets[ i ].setPositionToInvalid();
-                }
-            }
-
-            // Remove bullets that have gone off screen
-            if( m_vBullets.size() > 0 )
-            {
-                auto it = m_vBullets.begin();
-                while( it != m_vBullets.end() )
-                {
-                    if( ( *it ).getPos().x < 1 || ( *it ).getPos().y < 1 || ( *it ).getPos().x >= ScreenWidth() - 1 || ( *it ).getPos().y >= ScreenHeight() - 1 )
-                    {
-                        it = m_vBullets.erase( it );
-                    }
-                    else
-                    {
-                        it++;
-                    }
-                }
-            }
-
-            checkForHits();
-        }
-
-        ///// NEXT ROUND /////
-        if( m_vAsteroids.empty() )
-        {
-            // for every new round 1 more asteroid is created
-            m_nNewAsteroids++;
-            createAsteroids( m_nNewAsteroids, m_player.getPos(), 100, 60, 3, m_vAsteroids );
-        }
-
-        composeFrame();
-
-        return true;
-    }
+        int m_score = 0;
+        int m_nNewAsteroids = 3;
 };
 
 int main()
