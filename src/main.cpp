@@ -288,6 +288,7 @@ private:
     float m_timeSinceLastShot = 0.0f;
 
     int m_score = 0;
+    int m_nNewAsteroids = 3;
 public:
     void resetGame()
     {
@@ -295,11 +296,12 @@ public:
         m_player.init( { ScreenWidth() / 2.0f, ScreenHeight() / 2.0f }, 20, SpaceObject::eObjectType::SPACESHIP );
         m_player.setVelocity( { 0, 0 } );
         m_timeSinceLastShot = 0.0f;
+        m_nNewAsteroids = 3;
 
         m_vAsteroids.clear();
         m_vBullets.clear();
         
-        createAsteroids( 3, m_player.getPos(), 100, 60, 3, m_vAsteroids );
+        createAsteroids( 3, m_player.getPos(), 100, 60, m_nNewAsteroids, m_vAsteroids );
     }
     void createAsteroids( const int number,
                           const olc::vf2d centerPoint,
@@ -393,6 +395,21 @@ public:
                             }
                             createAsteroids( 2, ( *it ).getPos(), (float)newSize / 2.0f, newSize, newLife, vNewAsteroids );
                         }
+
+                        switch( destroyedAsteroidSize )
+                        {
+                        case 60:
+                            m_score += 5;
+                            break;
+                        case 30:
+                            m_score += 10;
+                            break;
+                        case 15:
+                            m_score += 20;
+                            break;
+                        default:
+                            break;
+                        }
                         it = m_vAsteroids.erase( it );
                         
                         continue;
@@ -481,6 +498,13 @@ public:
 #endif
 
             checkForHits();
+        }
+
+        ///// NEXT ROUND /////
+        if( m_vAsteroids.empty() )
+        {
+            m_nNewAsteroids++;
+            createAsteroids( m_nNewAsteroids, m_player.getPos(), 80, 60, 3, m_vAsteroids );
         }
 
         ////// SCORE //////
