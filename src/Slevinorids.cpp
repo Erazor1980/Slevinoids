@@ -28,7 +28,10 @@ bool Slevinorids::OnUserUpdate( float timeElapsed )
         m_bDebugInfo = !m_bDebugInfo;
     }
 
-    updateGame( timeElapsed );
+    if( !m_bGameOver )
+    {
+        updateGame( timeElapsed );
+    }
 
     composeFrame( m_bDebugInfo );
 
@@ -75,10 +78,17 @@ void Slevinorids::composeFrame( const bool bDebugInfo )
     }
 
     ////// SCORE //////
+    if( !m_bGameOver )
     {
         char text[ 100 ];
         sprintf_s( text, "SCORE: %d", m_score );
         DrawStringDecal( { ScreenWidth() - 90.0f, 10.0f }, text, olc::BLUE, { 0.8f, 0.8f } );
+    }
+
+    ///// GAME OVER /////
+    if( m_bGameOver )
+    {
+        gameOverScreen();
     }
 }
 
@@ -86,7 +96,7 @@ void Slevinorids::updateGame( const float timeElapsed )
 {
     ////// PLAYER //////
     m_player.update( *this, timeElapsed );
-    checkForCollision();
+    m_bGameOver = checkForCollision();
 
     ////// ASTEROIDS //////
     for( int i = 0; i < ( int )m_vAsteroids.size(); ++i )
@@ -151,6 +161,7 @@ void Slevinorids::resetGame()
     m_timeSinceLastShot = 0.0f;
     m_nNewAsteroids = 3;
     m_bCollision = false;
+    m_bGameOver = false;
 
     m_vAsteroids.clear();
     m_vBullets.clear();
@@ -278,19 +289,27 @@ void Slevinorids::checkForHits()
     }
 }
 
-void Slevinorids::checkForCollision()
+bool Slevinorids::checkForCollision()
 {
     // for debug only
     bool bCollision = false;
+
+    // using local variable to update member variable for game over at the end of this function (to not mess up debug info)
+    bool bGameOver = false;
 
     for( const auto& a : m_vAsteroids )
     {
         // distance player to current asteroid
         const float dist = ( a.getPos() - m_player.getPos() ).mag();
 
+        // collision detected
         if( dist < a.getSize() / 2.0f + m_player.getSize() / 3.0f )
         {
-
+            // player dead, game over
+            if( m_player.hit() )
+            {
+                bGameOver = true;
+            }
             // for debug only
             bCollision = true;
             m_CollisionAsteroidPos = a.getPos();
@@ -306,4 +325,16 @@ void Slevinorids::checkForCollision()
     {
         m_bCollision = false;
     }
+
+    return bGameOver;
+}
+
+void Slevinorids::gameOverScreen()
+{
+    const olc::vf2d pos( 1 / 7.0f * ScreenWidth(), 1 / 3.0f * ScreenHeight() );
+    DrawStringDecal( pos, "GAME OVER", olc::MAGENTA, { 4, 4 } );
+
+    char text[ 100 ];
+    sprintf_s( text, "FINAL SCORE: %d", m_score );
+    DrawStringDecal( pos + olc::vf2d( 70.0f, 50.0f ), text, olc::BLUE, { 1.2f, 1.2f } );
 }

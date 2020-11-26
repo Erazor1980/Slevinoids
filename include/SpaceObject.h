@@ -20,7 +20,7 @@ public:
     void draw( olc::PixelGameEngine& pge, const bool bDebugInfo = false ) const;   
     void update( const olc::PixelGameEngine& pge, const float timeElapsed );
 
-    // getter functions
+    //// GETTER FUNCTIONS ////
     olc::vf2d getPos() const
     {
         return m_pos;
@@ -34,16 +34,18 @@ public:
         return m_size;
     }
 
-    // setter functions
+    //// SETTER FUNCTIONS ////
     void setVelocity( olc::vf2d vel )
     {
         m_velocity = vel;
     }
-    void setPositionToInvalid() // used e.g. for destroying bullets (when hitting an asteroid)
+    // used e.g. for destroying bullets (when hitting an asteroid)
+    void setPositionToInvalid()
     {
         m_pos.x = -1000;;
     }
-    bool hit() // object is hit, returns true, if life is <= 0 after the hit
+    // object is hit, returns true, if life is <= 0 after the hit
+    bool hit()
     {
         m_life--;
 

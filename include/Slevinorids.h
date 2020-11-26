@@ -36,8 +36,11 @@ private:
     // checks if a bullet hits an asteroid (including erasing and creating of new asteroids)
     void checkForHits();
 
-    // checks if the spaceship collides with an asteroid
-    void checkForCollision();
+    // checks if the spaceship collides with an asteroid (true -> game over)
+    bool checkForCollision();
+
+    // draws game over 
+    void gameOverScreen();
 
 private:
     SpaceObject m_player;
@@ -49,6 +52,8 @@ private:
 
     int m_score = 0;
     int m_nNewAsteroids = 3;
+
+    bool m_bGameOver = false;
 
     // for debug info only
     bool m_bDebugInfo = false;
