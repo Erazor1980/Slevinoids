@@ -35,6 +35,14 @@ bool Slevinorids::OnUserUpdate( float timeElapsed )
 
     composeFrame( m_bDebugInfo );
 
+    if( m_bGameOver )
+    {
+        if( GetKey( olc::Key::ENTER ).bPressed )
+        {
+            resetGame();
+        }
+    }
+
     return true;
 }
 
@@ -81,8 +89,11 @@ void Slevinorids::composeFrame( const bool bDebugInfo )
     if( !m_bGameOver )
     {
         char text[ 100 ];
+        sprintf_s( text, "LEVEL %d", m_level );
+        DrawStringDecal( { 10.0f, 10.0f }, text, olc::WHITE, { 0.8f, 0.8f } );
         sprintf_s( text, "SCORE: %d", m_score );
         DrawStringDecal( { ScreenWidth() - 90.0f, 10.0f }, text, olc::BLUE, { 0.8f, 0.8f } );
+        
     }
 
     ///// GAME OVER /////
@@ -144,11 +155,12 @@ void Slevinorids::updateGame( const float timeElapsed )
         checkForHits();
     }
 
-    ///// NEXT ROUND /////
+    ///// NEXT LEVEL /////
     if( m_vAsteroids.empty() )
     {
-        // for every new round 1 more asteroid is created
+        // for every new level 1 more asteroid is created
         m_nNewAsteroids++;
+        m_level++;
         createAsteroids( m_nNewAsteroids, m_player.getPos(), 100, 60, 3, m_vAsteroids );
     }
 }
@@ -162,6 +174,7 @@ void Slevinorids::resetGame()
     m_nNewAsteroids = 3;
     m_bCollision = false;
     m_bGameOver = false;
+    m_level = 1;
 
     m_vAsteroids.clear();
     m_vBullets.clear();
@@ -337,4 +350,6 @@ void Slevinorids::gameOverScreen()
     char text[ 100 ];
     sprintf_s( text, "FINAL SCORE: %d", m_score );
     DrawStringDecal( pos + olc::vf2d( 70.0f, 50.0f ), text, olc::BLUE, { 1.2f, 1.2f } );
+    sprintf_s( text, "Press 'ENTER' to restart" );
+    DrawStringDecal( pos + olc::vf2d( 80.0f, 70.0f ), text, olc::WHITE, { 0.6f, 0.6f } );
 }

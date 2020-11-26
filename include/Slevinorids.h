@@ -51,6 +51,7 @@ private:
     float m_timeSinceLastShot = 0.0f;
 
     int m_score = 0;
+    int m_level = 1;
     int m_nNewAsteroids = 3;
 
     bool m_bGameOver = false;
