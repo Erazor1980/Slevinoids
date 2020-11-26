@@ -7,3 +7,4 @@ Simple Asteroids clone using olc::PixelGameEngine (https://github.com/OneLoneCod
 * UP ARROW     - thrust
 * SPACE        - shoot
 * ESC          - restart game
+* i            - enable/disable debug info

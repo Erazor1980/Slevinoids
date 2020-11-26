@@ -19,7 +19,7 @@ public:
     };
 
     void init( const olc::vf2d position, const int size, const eObjectType type, const int life = 1 );
-    void draw( olc::PixelGameEngine& pge ) const;   
+    void draw( olc::PixelGameEngine& pge, const bool bDebugInfo = false ) const;   
     void update( const olc::PixelGameEngine& pge, const float timeElapsed );
 
 

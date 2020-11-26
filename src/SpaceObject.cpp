@@ -55,7 +55,7 @@ void SpaceObject::init( const olc::vf2d position, const int size, const eObjectT
     }
 }
 
-void SpaceObject::draw( olc::PixelGameEngine& pge ) const
+void SpaceObject::draw( olc::PixelGameEngine& pge, const bool bDebugInfo ) const
 {
     if( eObjectType::BULLET == m_type )
     {
@@ -63,6 +63,7 @@ void SpaceObject::draw( olc::PixelGameEngine& pge ) const
 
         return;
     }
+
     // we do not want to change the points of the model. that's why we create pointsTransformed
     std::vector< olc::vf2d > pointsTransformed;
     const size_t nPoints = m_vPoints.size();
@@ -107,11 +108,13 @@ void SpaceObject::draw( olc::PixelGameEngine& pge ) const
         dir *= -0.5f * m_size;
         pge.FillCircle( m_pos + dir, 2, olc::YELLOW );
     }
-#if DEBUG_INFO
-    pge.DrawStringDecal( m_pos, "angle: " + std::to_string( m_angle ), olc::WHITE, { 0.5, 0.5 } );
-    pge.DrawStringDecal( m_pos + olc::vd2d( 0.0f, 8.0f ), "speed: " + std::to_string( m_velocity.mag() ), olc::WHITE, { 0.5, 0.5 } );
-    pge.DrawStringDecal( m_pos + olc::vd2d( 0.0f, 16.0f ), "life: " + std::to_string( m_life ), olc::WHITE, { 0.5, 0.5 } );
-#endif
+
+    if( bDebugInfo )
+    {
+        pge.DrawStringDecal( m_pos, "angle: " + std::to_string( m_angle ), olc::WHITE, { 0.5, 0.5 } );
+        pge.DrawStringDecal( m_pos + olc::vd2d( 0.0f, 8.0f ), "speed: " + std::to_string( m_velocity.mag() ), olc::WHITE, { 0.5, 0.5 } );
+        pge.DrawStringDecal( m_pos + olc::vd2d( 0.0f, 16.0f ), "life: " + std::to_string( m_life ), olc::WHITE, { 0.5, 0.5 } );
+    }
 }
 
 void SpaceObject::update( const olc::PixelGameEngine& pge, const float timeElapsed )
