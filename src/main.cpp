@@ -267,16 +267,16 @@ private:
 };
 
 // Override base class with your custom functionality
-class LukisTest : public olc::PixelGameEngine
+class Slevinorids : public olc::PixelGameEngine
 {
 public:
-    LukisTest()
+    Slevinorids()
     {
         /* initialize random seed */
         srand( unsigned int( time( NULL ) ) );
 
         // Name you application
-        sAppName = "Luki's Test";
+        sAppName = "Slevinorids";
     }
 
 private:
@@ -520,8 +520,8 @@ public:
 
 int main()
 {
-    LukisTest demo;
-    if( demo.Construct( 400, 300, 2, 2 ) )
-        demo.Start();
+    Slevinorids game;
+    if( game.Construct( 400, 300, 3, 3 ) )
+        game.Start();
     return 0;
 }
