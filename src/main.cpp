@@ -317,7 +317,7 @@ public:
         {
             SpaceObject obj;
 
-            // get random angle (around the player) to position the asteroid
+            // get random angle (around the center point) to position the asteroid
             float rndAngle = ( float )rand() / ( float )RAND_MAX * 6.28318f;
             distToCP += ( float )rand() / ( float )RAND_MAX * 10;
             olc::vf2d pos;
@@ -328,7 +328,7 @@ public:
 
             obj.init( pos, size, SpaceObject::eObjectType::ASTEROID, life );
 
-            // random velocity
+            // random flying directioon (constant velocity for all asteroids)
             float rndDirection = ( float )rand() / ( float )RAND_MAX * 6.28318f;
             olc::vf2d vel;
             vel.x += sinf( rndDirection ) * 25;
@@ -378,13 +378,17 @@ public:
                 // calc distance from bullet to the current asteroid
                 const float dist = ( m_vBullets[ i ].getPos() - ( *it ).getPos() ).mag();
 
+                // asteroid hit by the bullet
                 if( dist < ( *it ).getSize() / 2.0f )
                 {
                     m_vBullets[ i ].setPositionToInvalid();
 
+                    // asteroid destroyed
                     if( true == ( *it ).hit() )
                     {
                         const int destroyedAsteroidSize = ( *it ).getSize();
+
+                        // create child asteroids
                         if( destroyedAsteroidSize > 15 )
                         {
                             const int newSize = destroyedAsteroidSize / 2;
@@ -396,6 +400,7 @@ public:
                             createAsteroids( 2, ( *it ).getPos(), (float)newSize / 2.0f, newSize, newLife, vNewAsteroids );
                         }
 
+                        // increase points based on the size of destroyed asteroids
                         switch( destroyedAsteroidSize )
                         {
                         case 60:
@@ -503,6 +508,7 @@ public:
         ///// NEXT ROUND /////
         if( m_vAsteroids.empty() )
         {
+            // for every new round 1 more asteroid is created
             m_nNewAsteroids++;
             createAsteroids( m_nNewAsteroids, m_player.getPos(), 80, 60, 3, m_vAsteroids );
         }
