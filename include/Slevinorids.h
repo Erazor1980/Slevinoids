@@ -30,8 +30,8 @@ private:
                           const int life,
                           std::vector< SpaceObject >& vAsteroids );
     
-
-    void shoot( const float timeElapsed );    
+    // shoot button has been pressed or is held
+    void shoot();
 
     // checks if a bullet hits an asteroid (including erasing and creating of new asteroids)
     void checkForHits();
@@ -47,7 +47,7 @@ private:
     std::vector< SpaceObject > m_vAsteroids;
     std::vector< SpaceObject > m_vBullets;
 
-    const float m_timeBetweenShots = 200.0f; // in ms
+    const float m_timeBetweenShots = 0.200f; // in sec
     float m_timeSinceLastShot = 0.0f;
 
     int m_score = 0;

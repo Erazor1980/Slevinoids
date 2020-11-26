@@ -117,22 +117,14 @@ void Slevinorids::updateGame( const float timeElapsed )
 
     ////// BULLETS //////
     {
-        if( GetKey( olc::Key::SPACE ).bPressed )
+        m_timeSinceLastShot += timeElapsed;
+        if( GetKey( olc::Key::SPACE ).bPressed || GetKey( olc::Key::SPACE ).bHeld )
         {
-            shoot( timeElapsed );
+            shoot();
         }
         for( int i = 0; i < ( int )m_vBullets.size(); ++i )
         {
             m_vBullets[ i ].update( *this, timeElapsed );
-        }
-
-        //TODO: TEST, remove later!
-        if( GetKey( olc::Key::K ).bPressed )
-        {
-            for( int i = 0; i < ( int )m_vBullets.size(); ++i )
-            {
-                m_vBullets[ i ].setPositionToInvalid();
-            }
         }
 
         // Remove bullets that have gone off screen
@@ -217,8 +209,17 @@ void Slevinorids::createAsteroids( const int number,
     }
 }
 
-void Slevinorids::shoot( const float timeElapsed )
+void Slevinorids::shoot()
 {
+    if( m_timeSinceLastShot < m_timeBetweenShots )
+    {
+        return;
+    }
+    else
+    {
+        m_timeSinceLastShot = 0;
+    }
+
     SpaceObject bullet;
 
     olc::vf2d vel;
