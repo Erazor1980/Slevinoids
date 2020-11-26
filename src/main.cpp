@@ -5,266 +5,8 @@
 #include <vector>
 
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
+#include "SpaceObject.h"
 
-#define DEBUG_INFO 1
-
-#define BULLET_SPEED        120.0f
-#define MAX_SPEED_SPACESHIP 50.0f
-
-class SpaceObject
-{
-public:
-    SpaceObject()
-    {
-    }
-
-    enum eObjectType
-    {
-        SPACESHIP,
-        ASTEROID,
-        BULLET
-    };
-
-    // getter functions
-    olc::vf2d getPos() const
-    {
-        return m_pos;
-    }
-    float getOrientation() const
-    {
-        return m_angle;
-    }
-    int getSize() const
-    {
-        return m_size;
-    }
-
-    void init( const olc::vf2d position, const int size, const eObjectType type, const int life = 1 )
-    {
-        m_vPoints.clear();
-        m_pos   = position;
-        m_size  = size;
-        m_life  = life;
-        
-        if( eObjectType::SPACESHIP == type )
-        {
-            /* player as triangle */
-            m_vPoints = {
-                { 0, -m_size * 2 / 3.0f },              // top
-                { -m_size / 4.0f, m_size * 1 / 3.0f },  // bottom left
-                { m_size / 4.0f, m_size * 1 / 3.0f },   // bottom right
-            };
-
-            m_type  = eObjectType::SPACESHIP;
-            m_color = olc::WHITE;
-        }
-        else if ( eObjectType::ASTEROID == type )
-        {
-            // Create a "jagged" circle for the asteroid. It's important it remains
-            // mostly circular, as we do a simple collision check against a perfect
-            // circle.
-            int verts = 20;
-
-            for( int i = 0; i < verts; i++ )
-            {
-                float noise = ( float )rand() / ( float )RAND_MAX * 0.4f + 0.8f;
-                
-                olc::vf2d ver;
-                ver.x = noise * sinf( ( ( float )i / ( float )verts ) * 6.28318f ) * m_size / 2.0f;
-                ver.y = noise * cosf( ( ( float )i / ( float )verts ) * 6.28318f ) * m_size / 2.0f;
-                m_vPoints.push_back( ver );
-            }
-
-            m_angleDelta    = ( float )rand() / ( float )RAND_MAX * 0.00004f + 0.00008f;
-            if( rand() % 2 == 1 )
-            {
-                m_angleDelta *= -1;
-            }
-            m_type      = eObjectType::ASTEROID;
-            m_color     = olc::DARK_YELLOW;
-        }
-        else if( eObjectType::BULLET == type )
-        {
-            m_type  = eObjectType::BULLET;
-            m_color = olc::DARK_GREY;
-        }
-    }
-
-    void draw( olc::PixelGameEngine& pge ) const
-    {
-        if( eObjectType::BULLET == m_type )
-        {
-            pge.FillCircle( m_pos, 1, m_color );
-
-            return;
-        }
-        // we do not want to change the points of the model. that's why we create pointsTransformed
-        std::vector< olc::vf2d > pointsTransformed;
-        const size_t nPoints = m_vPoints.size();
-
-        if( nPoints == 0 )
-        {
-            return;
-        }
-        
-        pointsTransformed.resize( nPoints );
-
-        // rotate first
-        for( int i = 0; i < nPoints; ++i )
-        {
-            const float x = m_vPoints[ i ].x;
-            const float y = m_vPoints[ i ].y;
-
-            pointsTransformed[ i ].x = x * cosf( m_angle ) - y * sinf( m_angle );
-            pointsTransformed[ i ].y = y * cosf( m_angle ) + x * sinf( m_angle );
-        }
-
-        // translate
-        for( int i = 0; i < nPoints; ++i )
-        {
-            pointsTransformed[ i ] += m_pos;
-        }
-        
-        // draw closed polygon
-        for( int i = 0; i < nPoints + 1; i++ )
-        {
-            int j = ( i + 1 );
-
-            pge.DrawLine( pointsTransformed[ i % nPoints ], pointsTransformed[ j % nPoints ], m_color );
-        }
-
-        // draw acceleration effect
-        if( eObjectType::SPACESHIP == m_type && true == m_bAccelerate )
-        {
-            olc::vf2d dir;
-            dir.x = sinf( m_angle );
-            dir.y = -cosf( m_angle );
-            dir *= -0.5f * m_size;
-            pge.FillCircle( m_pos + dir, 2, olc::YELLOW );
-        }
-#if DEBUG_INFO
-        pge.DrawStringDecal( m_pos, "angle: " + std::to_string( m_angle ), olc::WHITE, { 0.5, 0.5 } );
-        pge.DrawStringDecal( m_pos + olc::vd2d( 0.0f, 8.0f ), "speed: " + std::to_string( m_velocity.mag() ), olc::WHITE, { 0.5, 0.5 } );
-        pge.DrawStringDecal( m_pos + olc::vd2d( 0.0f, 16.0f ), "life: " + std::to_string( m_life ), olc::WHITE, { 0.5, 0.5 } );
-#endif
-    }
-
-    void update( const olc::PixelGameEngine& pge, const float timeElapsed )
-    {
-        // orientation
-        if( eObjectType::SPACESHIP == m_type )
-        {
-            if( pge.GetKey( olc::Key::LEFT ).bHeld )
-            {
-                m_angle += -timeElapsed * 3;
-            }
-            if( pge.GetKey( olc::Key::RIGHT ).bHeld )
-            {
-                m_angle += timeElapsed * 3;
-            }
-
-            // Thrust? Apply ACCELERATION
-            if( pge.GetKey( olc::Key::UP ).bHeld )
-            {
-                // ACCELERATION changes VELOCITY (with respect to time)
-                m_velocity.x += sinf( m_angle ) * 40.0f * timeElapsed;
-                m_velocity.y += -cosf( m_angle ) * 40.0f * timeElapsed;
-                                
-                m_bAccelerate = true;
-
-                // limit speed
-                if( m_velocity.mag() > MAX_SPEED_SPACESHIP )
-                {
-                    m_velocity *= ( MAX_SPEED_SPACESHIP / m_velocity.mag() );
-                    m_bAccelerate = false;
-                }
-            }
-
-            if( pge.GetKey( olc::Key::UP ).bReleased )
-            {
-                m_bAccelerate = false;
-            }
-        }
-        else
-        {
-            m_angle += m_angleDelta;
-        }
-
-        if( m_angle > 6.28318f )
-        {
-            m_angle = 0;
-        }
-        if( m_angle < 0 )
-        {
-            m_angle = 6.28318f;
-        }
-
-        // VELOCITY changes POSITION (with respect to time)
-        m_pos += m_velocity * timeElapsed;
-
-        /* bullets will be erased after leaving the game space, no need for further checks here */
-        if( eObjectType::BULLET == m_type )
-        {
-            return;
-        }
-
-        // stay within the game space
-        if( m_pos.x < -m_size / 2.0f )
-        {
-            m_pos.x = ( float )pge.ScreenWidth() + m_size / 2.0f;
-        }
-        if( m_pos.x > ( float )pge.ScreenWidth() + m_size / 2.0f )
-        {
-            m_pos.x = -m_size / 2.0f;
-        }
-        if( m_pos.y < -m_size / 2.0f )
-        {
-            m_pos.y = ( float )pge.ScreenHeight() + m_size / 2.0f;
-        }
-        if( m_pos.y > ( float )pge.ScreenHeight() + m_size / 2.0f )
-        {
-            m_pos.y = -m_size / 2.0f;
-        }
-    }
-
-    void setVelocity( olc::vf2d vel )
-    {
-        m_velocity = vel;
-    }
-
-    // used e.g. for destroying bullets (when hitting an asteroid)
-    void setPositionToInvalid()
-    {
-        m_pos.x = -1000;;
-    }
-
-    // object is hit, returns true, if life is <= 0 after the hit
-    bool hit()
-    {
-        m_life--;
-
-        return ( m_life <= 0 );
-    }
-private:
-    /* attributes */
-    int m_life              = 1;
-    float m_angle           = 0.0f;
-    float m_angleDelta      = 0.0f;  // for asteroids only, constant rotation speed
-    //bool m_bIsPlayer        = true;  // otherwise it is an asteroid
-    eObjectType m_type      = eObjectType::ASTEROID;
-
-    olc::vf2d m_pos         = { 100, 100 };
-
-    olc::vf2d m_velocity    = { 0, 0 };
-
-    /* appearance */
-    int m_size              = 20; // in pixels (asteroids -> radius)
-    olc::Pixel m_color      = olc::GREEN;
-    bool m_bAccelerate      = false;    // for drawing effect only
-
-    std::vector< olc::vf2d > m_vPoints;
-};
 
 // Override base class with your custom functionality
 class Slevinorids : public olc::PixelGameEngine
@@ -321,6 +63,13 @@ private:
 
         ////// PLAYER //////
         m_player.draw( *this );
+#if DEBUG_INFO
+        if( true == m_bCollision )
+        {
+            DrawCircle( m_player.getPos(), 20, olc::RED );
+            DrawLine( m_player.getPos(), m_CollisionAsteroidPos, olc::DARK_YELLOW );
+        }
+#endif
 
         ////// BULLETS //////
         for( int i = 0; i < ( int )m_vBullets.size(); ++i )
@@ -410,6 +159,7 @@ private:
         m_player.setVelocity( { 0, 0 } );
         m_timeSinceLastShot = 0.0f;
         m_nNewAsteroids = 3;
+        m_bCollision = false;
 
         m_vAsteroids.clear();
         m_vBullets.clear();
@@ -541,6 +291,9 @@ private:
     // checks if the spaceship collides with an asteroid
     void checkForCollision()
     {
+        // for debug only
+        bool bCollision = false;
+
         for( const auto& a : m_vAsteroids )
         {
             // distance player to current asteroid
@@ -548,24 +301,38 @@ private:
 
             if( dist < a.getSize() / 2.0f + m_player.getSize() / 3.0f )
             {
-#if DEBUG_INFO
-                DrawCircle( m_player.getPos(), 20, olc::RED );
-                DrawLine( m_player.getPos(), a.getPos(), olc::DARK_YELLOW );
-#endif
+                
+                // for debug only
+                bCollision = true;
+                m_CollisionAsteroidPos = a.getPos();
             }
+            
+        }
+
+        if( true == bCollision )
+        {
+            m_bCollision = true;
+        }
+        else
+        {
+            m_bCollision = false;
         }
     }
 
-    private:
-        SpaceObject m_player;
-        std::vector< SpaceObject > m_vAsteroids;
-        std::vector< SpaceObject > m_vBullets;
+private:
+    SpaceObject m_player;
+    std::vector< SpaceObject > m_vAsteroids;
+    std::vector< SpaceObject > m_vBullets;
 
-        const float m_timeBetweenShots = 200.0f; // in ms
-        float m_timeSinceLastShot = 0.0f;
+    const float m_timeBetweenShots = 200.0f; // in ms
+    float m_timeSinceLastShot = 0.0f;
 
-        int m_score = 0;
-        int m_nNewAsteroids = 3;
+    int m_score = 0;
+    int m_nNewAsteroids = 3;
+
+    // for debug info only
+    bool m_bCollision = false;
+    olc::vf2d m_CollisionAsteroidPos;
 };
 
 int main()
