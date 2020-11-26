@@ -7,7 +7,7 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
-#define DEBUG_INFO 1
+#define DEBUG_INFO 0
 
 #define BULLET_SPEED        120.0f
 #define MAX_SPEED_SPACESHIP 50.0f
@@ -299,11 +299,17 @@ public:
         m_vAsteroids.clear();
         m_vBullets.clear();
         
-        createAsteroids( 3, m_player.getPos() );
+        createAsteroids( 3, m_player.getPos(), 100, 60, 3, m_vAsteroids );
     }
-    void createAsteroids( const int number, olc::vf2d playerPos )
+    void createAsteroids( const int number,
+                          const olc::vf2d centerPoint,
+                          const float approxDistToCenterPoint,
+                          const int size,
+                          const int life,
+                          std::vector< SpaceObject >& vAsteroids )
     {
-        float distanceToShip = 100;
+        // distance to center point, around which the asteroids will be created
+        float distToCP = approxDistToCenterPoint;
 
         for( int i = 0; i < number; ++i )
         {
@@ -311,14 +317,14 @@ public:
 
             // get random angle (around the player) to position the asteroid
             float rndAngle = ( float )rand() / ( float )RAND_MAX * 6.28318f;
-            distanceToShip += ( float )rand() / ( float )RAND_MAX * 10;
+            distToCP += ( float )rand() / ( float )RAND_MAX * 10;
             olc::vf2d pos;
-            pos.x += sinf( rndAngle ) * distanceToShip;
-            pos.y += -cosf( rndAngle ) * distanceToShip;
+            pos.x += sinf( rndAngle ) * distToCP;
+            pos.y += -cosf( rndAngle ) * distToCP;
 
-            pos += playerPos;
+            pos += centerPoint;
 
-            obj.init( pos, 60, SpaceObject::eObjectType::ASTEROID, 2 );
+            obj.init( pos, size, SpaceObject::eObjectType::ASTEROID, life );
 
             // random velocity
             float rndDirection = ( float )rand() / ( float )RAND_MAX * 6.28318f;
@@ -327,7 +333,7 @@ public:
             vel.y += -cosf( rndDirection ) * 25;
             obj.setVelocity( vel );
 
-            m_vAsteroids.push_back( obj );
+            vAsteroids.push_back( obj );
         }
     }
 
@@ -376,15 +382,31 @@ public:
 
                     if( true == ( *it ).hit() )
                     {
+                        const int destroyedAsteroidSize = ( *it ).getSize();
+                        if( destroyedAsteroidSize > 15 )
+                        {
+                            const int newSize = destroyedAsteroidSize / 2;
+                            int newLife = 2;
+                            if( 15 == newSize )
+                            {
+                                newLife = 1;
+                            }
+                            createAsteroids( 2, ( *it ).getPos(), (float)newSize / 2.0f, newSize, newLife, vNewAsteroids );
+                        }
                         it = m_vAsteroids.erase( it );
-                        //TODO create 2 new asteroids here! (if not already too small)
-
+                        
                         continue;
                     }
                 }
 
                 it++;
             }
+        }
+
+        // add new asteroids to main vector
+        for( auto a : vNewAsteroids )
+        {
+            m_vAsteroids.push_back( a );
         }
     }
 
