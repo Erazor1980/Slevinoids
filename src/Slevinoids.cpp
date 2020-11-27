@@ -54,7 +54,7 @@ bool Slevinoids::OnUserUpdate( float timeElapsed )
         m_bGamePaused = !m_bGamePaused;
     }
 
-    if( !m_bGameOver && !m_bGamePaused )
+    if( /*!m_bGameOver &&*/ !m_bGamePaused )
     {
         updateGame( timeElapsed );
     }
@@ -78,7 +78,10 @@ void Slevinoids::composeFrame( const bool bDebugInfo )
 
     ///// MOON /////
     SetDrawTarget( m_bgLayer );
-    DrawDecal( { ScreenWidth() / 3.0f, ScreenHeight() / 3.0f }, mp_moonDecal, { 0.3f, 0.3f } );
+    //DrawDecal( { ScreenWidth() / 3.0f, ScreenHeight() / 3.0f }, mp_moonDecal, { 0.3f, 0.3f } );
+    DrawRotatedDecal( { ScreenWidth() / 3.0f, ScreenHeight() / 3.0f }, mp_moonDecal, m_moonAngle,
+                      { mp_moonDecal->sprite->width / 2.0f, mp_moonDecal->sprite->height / 2.0f }, { 0.3f, 0.3f } );
+    m_moonAngle += 0.00008f;
     SetDrawTarget( nullptr );
 
     ///// STARS /////
@@ -103,7 +106,10 @@ void Slevinoids::composeFrame( const bool bDebugInfo )
     }
 
     ////// PLAYER //////
-    m_player.draw( *this, bDebugInfo );
+    if( !m_bGameOver || m_bDebugInfo )
+    {
+        m_player.draw( *this, bDebugInfo );
+    }
     if( bDebugInfo && m_bCollision )
     {
         DrawCircle( m_player.getPos(), m_player.getSize() / 2, olc::RED );
@@ -124,10 +130,10 @@ void Slevinoids::composeFrame( const bool bDebugInfo )
     }
 
     ///// EXPLOSIONS /////
-    for( int i = 0; i < ( int )m_vExplosions.size(); ++i )
+    for( const auto &e : m_vExplosions )
     {
-        FillCircle( m_vExplosions[ i ].m_pos, 2, olc::WHITE );
-        DrawCircle( m_vExplosions[ i ].m_pos, 3, olc::RED );
+        FillCircle( e.m_pos, e.m_radius - 1, olc::WHITE );
+        DrawCircle( e.m_pos, e.m_radius, olc::RED );
     }
 
     ////// SCORE //////
@@ -162,13 +168,19 @@ void Slevinoids::composeFrame( const bool bDebugInfo )
 void Slevinoids::updateGame( const float timeElapsed )
 {
     ////// PLAYER //////
-    m_player.update( *this, timeElapsed );
-    m_bGameOver = checkForCollision();
+    if( !m_bGameOver )
+    {
+        m_player.update( *this, timeElapsed );
+        m_bGameOver = checkForCollision();
+    }
 
     ////// ASTEROIDS //////
-    for( int i = 0; i < ( int )m_vAsteroids.size(); ++i )
+    if( !m_bGameOver )
     {
-        m_vAsteroids[ i ].update( *this, timeElapsed );
+        for( int i = 0; i < ( int )m_vAsteroids.size(); ++i )
+        {
+            m_vAsteroids[ i ].update( *this, timeElapsed );
+        }
     }
 
     ////// BULLETS //////
@@ -415,6 +427,11 @@ bool Slevinoids::checkForCollision()
             if( m_player.hit() )
             {
                 bGameOver = true;
+                Explosion exp;
+                exp.m_maxDuration = 0.15f;
+                exp.m_pos = m_player.getPos();
+                exp.m_radius = 7;
+                m_vExplosions.push_back( exp );
             }
             // for debug only
             bCollision = true;
@@ -455,7 +472,7 @@ void Slevinoids::updateExplosions( const float timeElapsed )
     {
         ( *it ).m_duration += timeElapsed;
 
-        if( ( *it ).m_duration > 0.1f )
+        if( ( *it ).m_duration > ( *it ).m_maxDuration )
         {
             it = m_vExplosions.erase( it );
         }

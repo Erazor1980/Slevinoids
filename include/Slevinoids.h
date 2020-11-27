@@ -20,6 +20,8 @@ private:
     {
         olc::vf2d m_pos;
         float m_duration = 0.0f;
+        float m_maxDuration = 0.1f;
+        int m_radius = 3;
     };
     // draw everything to screen
     void composeFrame( const bool bDebugInfo = false );
@@ -74,6 +76,7 @@ private:
 
     olc::Sprite* mp_moonImg = nullptr;
     olc::Decal* mp_moonDecal = nullptr;
+    float m_moonAngle = 0.0f;
 
     int m_bgLayer;  // background layer
 
