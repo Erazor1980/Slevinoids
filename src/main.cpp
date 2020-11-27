@@ -1,9 +1,9 @@
 #define OLC_PGE_APPLICATION
-#include "Slevinorids.h"
+#include "Slevinoids.h"
 
 int main()
 {
-    Slevinorids game;
+    Slevinoids game;
     if( game.Construct( 400, 300, 3, 3 ) )
         game.Start();
     return 0;

@@ -6,11 +6,11 @@
 #include "SpaceObject.h"
 
 // Override base class with your custom functionality
-class Slevinorids : public olc::PixelGameEngine
+class Slevinoids : public olc::PixelGameEngine
 {
 public:
-    Slevinorids();
-    ~Slevinorids();
+    Slevinoids();
+    ~Slevinoids();
 
     bool OnUserCreate() override;
     bool OnUserUpdate( float timeElapsed ) override;

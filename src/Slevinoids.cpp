@@ -1,15 +1,15 @@
-#include "Slevinorids.h"
+#include "Slevinoids.h"
 
-Slevinorids::Slevinorids()
+Slevinoids::Slevinoids()
 {
     /* initialize random seed */
     srand( unsigned int( time( NULL ) ) );
 
     // Name you application
-    sAppName = "Slevinorids";
+    sAppName = "Slevinoids";
 }
 
-Slevinorids::~Slevinorids()
+Slevinoids::~Slevinoids()
 {
     if( mp_moonImg )
     {
@@ -23,7 +23,7 @@ Slevinorids::~Slevinorids()
     }
 }
 
-bool Slevinorids::OnUserCreate()
+bool Slevinoids::OnUserCreate()
 {
     // Called once at the start, so create things here
     resetGame();
@@ -39,7 +39,7 @@ bool Slevinorids::OnUserCreate()
     return true;
 }
 
-bool Slevinorids::OnUserUpdate( float timeElapsed )
+bool Slevinoids::OnUserUpdate( float timeElapsed )
 {
     if( GetKey( olc::Key::ESCAPE ).bPressed && !m_bGamePaused )
     {
@@ -72,7 +72,7 @@ bool Slevinorids::OnUserUpdate( float timeElapsed )
     return true;
 }
 
-void Slevinorids::composeFrame( const bool bDebugInfo )
+void Slevinoids::composeFrame( const bool bDebugInfo )
 {
     Clear( olc::BLANK );
 
@@ -159,7 +159,7 @@ void Slevinorids::composeFrame( const bool bDebugInfo )
     }
 }
 
-void Slevinorids::updateGame( const float timeElapsed )
+void Slevinoids::updateGame( const float timeElapsed )
 {
     ////// PLAYER //////
     m_player.update( *this, timeElapsed );
@@ -227,7 +227,7 @@ void Slevinorids::updateGame( const float timeElapsed )
     }
 }
 
-void Slevinorids::resetGame()
+void Slevinoids::resetGame()
 {
     m_score = 0;
     m_player.init( { ScreenWidth() / 2.0f, ScreenHeight() / 2.0f }, 20, SpaceObject::eObjectType::SPACESHIP );
@@ -243,7 +243,7 @@ void Slevinorids::resetGame()
     m_vBullets.clear();
     m_vExplosions.clear();
 
-    createAsteroids( 3, m_player.getPos(), 100, 60, m_nNewAsteroids, m_vAsteroids );
+    createAsteroids( m_nNewAsteroids, m_player.getPos(), 100, 60, 3, m_vAsteroids );
 
     // stars
     m_vStars.clear();
@@ -264,7 +264,7 @@ void Slevinorids::resetGame()
     }
 }
 
-void Slevinorids::createAsteroids( const int number,
+void Slevinoids::createAsteroids( const int number,
                                    const olc::vf2d centerPoint,
                                    const float approxDistToCenterPoint,
                                    const int size, const int life,
@@ -299,7 +299,7 @@ void Slevinorids::createAsteroids( const int number,
     }
 }
 
-void Slevinorids::shoot()
+void Slevinoids::shoot()
 {
     if( m_timeSinceLastShot < m_timeBetweenShots )
     {
@@ -325,7 +325,7 @@ void Slevinorids::shoot()
     m_vBullets.push_back( bullet );
 }
 
-void Slevinorids::checkForHits()
+void Slevinoids::checkForHits()
 {
     // new asteroids after collision are stored here, to not mess up the loop/deleting
     std::vector< SpaceObject > vNewAsteroids;
@@ -395,7 +395,7 @@ void Slevinorids::checkForHits()
     }
 }
 
-bool Slevinorids::checkForCollision()
+bool Slevinoids::checkForCollision()
 {
     // for debug only
     bool bCollision = false;
@@ -435,7 +435,7 @@ bool Slevinorids::checkForCollision()
     return bGameOver;
 }
 
-void Slevinorids::gameOverScreen()
+void Slevinoids::gameOverScreen()
 {
     const olc::vf2d pos( 1 / 7.0f * ScreenWidth(), 1 / 3.0f * ScreenHeight() );
     DrawStringDecal( pos, "GAME OVER", olc::MAGENTA, { 4, 4 } );
@@ -447,7 +447,7 @@ void Slevinorids::gameOverScreen()
     DrawStringDecal( pos + olc::vf2d( 90.0f, 70.0f ), text, olc::WHITE, { 0.6f, 0.6f } );
 }
 
-void Slevinorids::updateExplosions( const float timeElapsed )
+void Slevinoids::updateExplosions( const float timeElapsed )
 {
     auto it = m_vExplosions.begin();
 
