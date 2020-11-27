@@ -41,7 +41,7 @@ bool Slevinorids::OnUserCreate()
 
 bool Slevinorids::OnUserUpdate( float timeElapsed )
 {
-    if( GetKey( olc::Key::ESCAPE ).bPressed )
+    if( GetKey( olc::Key::ESCAPE ).bPressed && !m_bGamePaused )
     {
         resetGame();
     }
@@ -49,8 +49,12 @@ bool Slevinorids::OnUserUpdate( float timeElapsed )
     {
         m_bDebugInfo = !m_bDebugInfo;
     }
+    if( GetKey( olc::Key::P ).bPressed && !m_bGameOver )
+    {
+        m_bGamePaused = !m_bGamePaused;
+    }
 
-    if( !m_bGameOver )
+    if( !m_bGameOver && !m_bGamePaused )
     {
         updateGame( timeElapsed );
     }
@@ -137,6 +141,17 @@ void Slevinorids::composeFrame( const bool bDebugInfo )
         
     }
 
+    ///// PAUSED /////
+    if( m_bGamePaused )
+    {
+        const olc::vf2d pos( 1 / 4.0f * ScreenWidth(), 1 / 3.0f * ScreenHeight() );
+        DrawStringDecal( pos, "PAUSED", olc::DARK_GREEN, { 4, 4 } );
+
+        char text[ 100 ];
+        sprintf_s( text, "Press 'P' to continue" );
+        DrawStringDecal( pos + olc::vf2d( 30.0f, 50.0f ), text, olc::WHITE, { 0.7f, 0.7f } );
+    }
+
     ///// GAME OVER /////
     if( m_bGameOver )
     {
@@ -191,10 +206,21 @@ void Slevinorids::updateGame( const float timeElapsed )
     ///// EXPLOSIONS /////
     updateExplosions( timeElapsed );
 
+    ///// STARS /////
+    for( auto& s : m_vStars )
+    {
+        s.m_pos += s.m_vel * timeElapsed;
+        if( s.m_pos.x >= ScreenWidth() )
+        {
+            s.m_pos.x = 0;
+            s.m_pos.y = ( float )( rand() % ScreenHeight() );
+        }
+    }
+
     ///// NEXT LEVEL /////
     if( m_vAsteroids.empty() )
     {
-        // for every new level 1 more asteroid is created
+        // for every new level 1 additional asteroid is created
         m_nNewAsteroids++;
         m_level++;
         createAsteroids( m_nNewAsteroids, m_player.getPos(), 100, 60, 3, m_vAsteroids );
@@ -210,6 +236,7 @@ void Slevinorids::resetGame()
     m_nNewAsteroids = 3;
     m_bCollision = false;
     m_bGameOver = false;
+    m_bGamePaused = false;
     m_level = 1;
 
     m_vAsteroids.clear();
@@ -221,13 +248,19 @@ void Slevinorids::resetGame()
     // stars
     m_vStars.clear();
 
-    const int nStars = 500;
+    const int nStars = 300;
     for( int i = 0; i < nStars; ++i )
     {
         const int x = rand() % ScreenWidth();
         const int y = rand() % ScreenHeight();
 
-        m_vStars.push_back( { { x, y }, { 0.0f , 0.0f } } );
+        olc::vf2d vel;
+        vel.y = 0.0f;
+        if( i % 5 == 0 )
+        {
+            vel.x = 10.0f;
+        }
+        m_vStars.push_back( { { ( float )x, ( float )y }, vel } );
     }
 }
 

@@ -19,7 +19,7 @@ private:
     struct Explosion
     {
         olc::vf2d m_pos;
-        float m_duration = 0.0;
+        float m_duration = 0.0f;
     };
     // draw everything to screen
     void composeFrame( const bool bDebugInfo = false );
@@ -57,7 +57,7 @@ private:
 
     struct Star
     {
-        olc::vi2d m_pos;
+        olc::vf2d m_pos;
         olc::vf2d m_vel;
     };
     std::vector< Star > m_vStars;
@@ -70,6 +70,7 @@ private:
     int m_nNewAsteroids = 3;
 
     bool m_bGameOver = false;
+    bool m_bGamePaused = false;
 
     olc::Sprite* mp_moonImg = nullptr;
     olc::Decal* mp_moonDecal = nullptr;

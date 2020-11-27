@@ -1,4 +1,4 @@
-# Slevinorids
+# Slevinoids
 Simple Asteroids clone using olc::PixelGameEngine (https://github.com/OneLoneCoder/olcPixelGameEngine)
 
 ## Controls:
@@ -6,5 +6,6 @@ Simple Asteroids clone using olc::PixelGameEngine (https://github.com/OneLoneCod
 * RIGHT ARROW  - turn right
 * UP ARROW     - thrust
 * SPACE        - shoot
+* P            - pause game
 * ESC          - restart game
-* i            - enable/disable debug info
+* I            - enable/disable debug info
