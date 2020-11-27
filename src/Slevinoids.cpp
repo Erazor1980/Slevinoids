@@ -184,6 +184,7 @@ void Slevinoids::updateGame( const float timeElapsed )
     }
 
     ////// BULLETS //////
+    if( !m_bGameOver )
     {
         m_timeSinceLastShot += timeElapsed;
         if( GetKey( olc::Key::SPACE ).bPressed || GetKey( olc::Key::SPACE ).bHeld )
