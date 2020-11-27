@@ -1,6 +1,8 @@
 # Slevinoids
 Simple Asteroids clone using olc::PixelGameEngine (https://github.com/OneLoneCoder/olcPixelGameEngine)
 
+![Slevinoids](/data/Slevinoids.png?raw=true "Optional Title")
+
 ## Controls:
 * LEFT ARROW   - turn left
 * RIGHT ARROW  - turn right
