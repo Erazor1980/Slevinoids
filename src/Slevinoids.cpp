@@ -202,7 +202,7 @@ void Slevinoids::updateGame( const float timeElapsed )
             auto it = m_vBullets.begin();
             while( it != m_vBullets.end() )
             {
-                if( ( *it ).getPos().x < 1 || ( *it ).getPos().y < 1 || ( *it ).getPos().x >= ScreenWidth() - 1 || ( *it ).getPos().y >= ScreenHeight() - 1 )
+                if( ( *it ).getPos().x < -20 || ( *it ).getPos().y < -20 || ( *it ).getPos().x >= ScreenWidth() + 20 || ( *it ).getPos().y >= ScreenHeight() + 20 )
                 {
                     it = m_vBullets.erase( it );
                 }
